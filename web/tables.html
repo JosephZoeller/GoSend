@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Saved Test Stats</title>
+        <style>
+            table {
+              font-family: arial, sans-serif;
+              border-collapse:collapse;
+            }
+            h2 {
+              text-align:left;
+              padding: 8px;
+            }
+            
+            td, th {
+              border: 1px solid #dddddd;
+              text-align:center;
+              padding: 6px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Shower Thoughts</h2>
+        <table>
+            <tr> <!--table row-->
+                <th>Date</th> <!--table header-->
+                <th>User</th>
+                <th>Thought</th>
+            </tr>
+            {{range .Thoughts}}
+            <tr>
+                <td>{{.Date}}</td>
+                <td>{{.User}}</td>
+                <td>{{.Thought}}</td>
+            </tr>
+            {{end}}
+        </table>
+    </body>
+</html>
