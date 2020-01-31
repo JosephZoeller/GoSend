@@ -1,34 +1,110 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
+	//"fmt"
+	//"bufio"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	structs "github.com/JosephZoeller/gmg/Util"
 )
-
-type SaveFile struct {
-	Thoughts []UserThought `json:"Thoughts"`
-}
-
-type UserThought struct {
-	Date    string `json:"Date"`
-	User    string `json:"User"`
-	Thought string `json:"Thought"`
-}
 
 const savefilename string = "save.json"
 
+var server string
+var port string
+
 func main() {
-	hostSave()
+
+	server = os.Args[1]
+	port = os.Args[2]
+	ln, er := net.Listen("tcp", ":"+port)
+	if er != nil {
+		log.Println(er)
+		return
+	}
+	conn, er := ln.Accept()
+	if er != nil {
+		log.Println(er)
+		return
+	}
+	defer conn.Close()
+
+	tHeader := structs.ThoughtHeader{}
+	jsonHeader := make([]byte, 1024)
+	_, er = conn.Read(jsonHeader)
+	jsonHeader = bytes.Trim(jsonHeader, "\x00")
+	if er != nil {
+		log.Println("Header Read Error: ", er)
+		return
+	}
+
+	er = json.Unmarshal(jsonHeader, &tHeader)
+	if er != nil {
+		log.Println("Unmarshal Error: ", er, "jsonHeader: ", string(jsonHeader))
+		return
+	}
+
+	jsonBody := make([]byte, 0)
+	for i := 0; i < tHeader.Size; i++ {
+		buf := make([]byte, 1024)
+		n, er := conn.Read(buf)
+		if er != nil {
+			log.Println("Read Error: ", er)
+			return
+		}
+		jsonBody = append(jsonBody, buf[:n]...)
+	}
+	jsonBody = bytes.Trim(jsonBody, "\x00")
+
+	/*
+		bufio.NewWriter(os.Stdout).WriteString(string(jsonBody))
+		bufio.NewReader(os.Stdin).ReadLine()
+	*/
+
+	tBody := structs.ThoughtBody{}
+	log.Println(string(jsonBody))
+	er = json.Unmarshal(jsonBody, &tBody)
+	if er != nil {
+		log.Println("Unmarshal Error: ", er, "jsonBody: ", string(jsonBody))
+		return
+	}
+	AppendSave(tBody)
 }
 
-func loadFile() (*SaveFile, error) {
-	saves := SaveFile{}
+/*
+var ConnSig chan string = make(chan string)
+
+func main() {
+	ln, _ := net.Listen("tcp", ":8080")
+	for { // will create a whole bunch of sessions unless a blocker is introduced
+		fmt.Println("Pre-Session...")
+		go Session(ln)
+		fmt.Println(<-ConnSig)
+	}
+}
+
+func Session(ln net.Listener) {
+	connection, _ := ln.Accept()
+	ConnSig <- "connection est."
+	defer connection.Close()
+	for {
+		buf := make([]byte, 1024) // 1024 is the standard
+		connection.Read(buf)
+		fmt.Println(string(buf))
+	}
+}
+*/
+
+func loadFile() (*structs.SaveFile, error) {
+	saves := structs.SaveFile{}
 
 	file, er := os.Open(savefilename)
 	if er != nil {
@@ -45,7 +121,7 @@ func loadFile() (*SaveFile, error) {
 	return &saves, nil
 }
 
-func saveFile(s *SaveFile) error {
+func saveFile(s *structs.SaveFile) error {
 	file, er := os.Create(savefilename)
 	if er != nil {
 		return er
@@ -61,7 +137,7 @@ func saveFile(s *SaveFile) error {
 	return nil
 }
 
-func hostSave() {
+func hostSave(portNum string) {
 	http.HandleFunc("/Display", func(res http.ResponseWriter, req *http.Request) {
 		saves, er := loadFile()
 		if er != nil {
@@ -74,26 +150,22 @@ func hostSave() {
 	})
 
 	http.HandleFunc("/Upload", func(res http.ResponseWriter, req *http.Request) {
-		up := UserThought{}
+		tBody := structs.ThoughtBody{}
 
 		log.Println("Upload Requested")
-		if req.Method != "POST" {
-			log.Println("Upload Rejected")
-		} else {
-			err := json.NewDecoder(req.Body).Decode(&up)
+		err := json.NewDecoder(req.Body).Decode(&tBody)
 
-			if err != nil {
-				log.Println(err)
-			} else {
-				AppendSave(up)
-			}
+		if err != nil {
+			log.Println(err)
+		} else {
+			AppendSave(tBody)
 		}
 	})
 
 	errorChan := make(chan error)
-	fmt.Println("Listening on port 8080 (http)...")
 	go func() {
-		errorChan <- http.ListenAndServe(":8080", nil)
+		errorChan <- http.ListenAndServe(":"+portNum, nil)
+		log.Printf("%s listening on port :%s", server, portNum)
 	}()
 
 	signalChan := make(chan os.Signal, 1)
@@ -107,21 +179,21 @@ func hostSave() {
 			}
 
 		case sig := <-signalChan:
-			log.Println("shutting down: ", sig)
+			log.Printf("Server %s shutting down: %s", server, sig)
 			os.Exit(0)
 		}
 	}
 
 }
 
-func AppendSave(usTh UserThought) {
+func AppendSave(tBody structs.ThoughtBody) {
 
 	saves, er := loadFile()
 	if er != nil {
 		log.Println(er)
 	}
 
-	saves.Thoughts = append(saves.Thoughts, usTh)
+	saves.Thoughts = append(saves.Thoughts, tBody)
 
 	er = saveFile(saves)
 	if er != nil {
