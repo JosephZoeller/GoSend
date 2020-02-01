@@ -3,8 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	//"fmt"
-	//"bufio"
 	"html/template"
 	"log"
 	"net"
@@ -25,83 +23,100 @@ func main() {
 
 	server = os.Args[1]
 	port = os.Args[2]
+	go hostSave("8081")
+	conn, er := GetSession(port)
+	if er != nil {
+		log.Println("Get Session Error: ", er)
+		return
+	}
+	c := *conn; defer c.Close()
+
+	tHeader, er := HeaderInbound(conn)
+	if er != nil {
+		log.Println("Create Error: ", er)
+		return
+	}
+
+	fileCreate, er := os.Create(tHeader.Filename)
+	if er != nil {
+		log.Println("Create Error: ", er)
+		return
+	}
+	defer fileCreate.Close()
+
+	if FileInbound(tHeader, conn, fileCreate) != nil {
+		return
+	}
+	AppendSave(tHeader)
+}
+
+func FileInbound(tHeader *structs.FileHeader, con *net.Conn, fileOut *os.File) error {
+	c := *con
+	buf := make([]byte, 1024)
+
+	for i := int64(1); i <= tHeader.Blocks; i++ {
+		if tHeader.Blocks == i {
+			buf = make([]byte, 1024)
+		}
+
+		er := func() error {
+			_, er := c.Read(buf)
+			if er != nil {
+				return er
+			}
+
+			if tHeader.Blocks == i {
+				_, er = fileOut.Write(buf[:tHeader.TailSize])
+			} else {
+				_, er = fileOut.Write(buf)
+			}
+			if er != nil {
+				return er
+			}
+			return nil
+		}()
+		
+		if er != nil {
+			return er
+		}
+	}
+	return nil
+}
+
+func HeaderInbound(con *net.Conn) (*structs.FileHeader, error) {
+	c := *con
+	tHeader := structs.FileHeader{}
+
+	jsonHeader := make([]byte, 1024)
+	_, er := c.Read(jsonHeader)
+	if er != nil {
+		return &tHeader, er
+	}
+
+	jsonHeader = bytes.Trim(jsonHeader, "\x00")
+	er = json.Unmarshal(jsonHeader, &tHeader)
+	if er != nil {
+		return &tHeader, er
+	}
+
+	return &tHeader, nil
+}
+
+func GetSession(port string) (*net.Conn, error){
 	ln, er := net.Listen("tcp", ":"+port)
 	if er != nil {
 		log.Println(er)
-		return
+		return nil, er
 	}
+
 	conn, er := ln.Accept()
 	if er != nil {
 		log.Println(er)
-		return
-	}
-	defer conn.Close()
-
-	tHeader := structs.ThoughtHeader{}
-	jsonHeader := make([]byte, 1024)
-	_, er = conn.Read(jsonHeader)
-	jsonHeader = bytes.Trim(jsonHeader, "\x00")
-	if er != nil {
-		log.Println("Header Read Error: ", er)
-		return
+		return nil, er
 	}
 
-	er = json.Unmarshal(jsonHeader, &tHeader)
-	if er != nil {
-		log.Println("Unmarshal Error: ", er, "jsonHeader: ", string(jsonHeader))
-		return
-	}
-
-	jsonBody := make([]byte, 0)
-	for i := 0; i < tHeader.Size; i++ {
-		buf := make([]byte, 1024)
-		n, er := conn.Read(buf)
-		if er != nil {
-			log.Println("Read Error: ", er)
-			return
-		}
-		jsonBody = append(jsonBody, buf[:n]...)
-	}
-	jsonBody = bytes.Trim(jsonBody, "\x00")
-
-	/*
-		bufio.NewWriter(os.Stdout).WriteString(string(jsonBody))
-		bufio.NewReader(os.Stdin).ReadLine()
-	*/
-
-	tBody := structs.ThoughtBody{}
-	log.Println(string(jsonBody))
-	er = json.Unmarshal(jsonBody, &tBody)
-	if er != nil {
-		log.Println("Unmarshal Error: ", er, "jsonBody: ", string(jsonBody))
-		return
-	}
-	AppendSave(tBody)
+	return &conn, er
 }
-
-/*
-var ConnSig chan string = make(chan string)
-
-func main() {
-	ln, _ := net.Listen("tcp", ":8080")
-	for { // will create a whole bunch of sessions unless a blocker is introduced
-		fmt.Println("Pre-Session...")
-		go Session(ln)
-		fmt.Println(<-ConnSig)
-	}
-}
-
-func Session(ln net.Listener) {
-	connection, _ := ln.Accept()
-	ConnSig <- "connection est."
-	defer connection.Close()
-	for {
-		buf := make([]byte, 1024) // 1024 is the standard
-		connection.Read(buf)
-		fmt.Println(string(buf))
-	}
-}
-*/
 
 func loadFile() (*structs.SaveFile, error) {
 	saves := structs.SaveFile{}
@@ -149,19 +164,6 @@ func hostSave(portNum string) {
 		t.Execute(res, *saves)
 	})
 
-	http.HandleFunc("/Upload", func(res http.ResponseWriter, req *http.Request) {
-		tBody := structs.ThoughtBody{}
-
-		log.Println("Upload Requested")
-		err := json.NewDecoder(req.Body).Decode(&tBody)
-
-		if err != nil {
-			log.Println(err)
-		} else {
-			AppendSave(tBody)
-		}
-	})
-
 	errorChan := make(chan error)
 	go func() {
 		errorChan <- http.ListenAndServe(":"+portNum, nil)
@@ -186,14 +188,14 @@ func hostSave(portNum string) {
 
 }
 
-func AppendSave(tBody structs.ThoughtBody) {
+func AppendSave(tHeader *structs.FileHeader) {
 
 	saves, er := loadFile()
 	if er != nil {
 		log.Println(er)
 	}
 
-	saves.Thoughts = append(saves.Thoughts, tBody)
+	saves.Files = append(saves.Files, *tHeader)
 
 	er = saveFile(saves)
 	if er != nil {

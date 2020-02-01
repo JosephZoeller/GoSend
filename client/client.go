@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"log"
 	"net"
 	"os"
-	"strings"
 	"time"
 
 	structs "github.com/JosephZoeller/gmg/Util"
@@ -16,102 +14,109 @@ import (
 var user string = os.Getenv("USER")
 
 func main() {
-	conn, er := EstablishConnection(os.Args[1], 5)
-	defer conn.Close()
+
+	fileIn, er := os.Open(os.Args[1])
 	if er != nil {
 		log.Println(er)
 		return
 	}
 
-	thought, er := ReadThought()
+	conn, er := EstablishConnection(os.Args[2], 5)
 	if er != nil {
 		log.Println(er)
+		return
 	}
-	er = SendThought(MakeBody(thought), conn)
-	if er != nil {
-		log.Println(er)
-	}
-	/*
-		for {
-			thought, er := ReadThought()
-			if er != nil {
-				log.Println(er)
-			} else {
-				SendThought(MakeBody(thought), conn)
-			}
-		}
-	*/
+	c := *conn
+	defer c.Close()
 
+	tHeader, er := MakeHeader(fileIn)
+	if er != nil {
+		log.Println(er)
+		return
+	}
+	er = HeaderOutbound(tHeader, conn)
+	if er != nil {
+		log.Println(er)
+		return
+	}
+
+	er = FileOutbound(fileIn, conn, tHeader)
+	if er != nil {
+		log.Println(er)
+	}
 }
 
-func EstablishConnection(port string, timeout int) (net.Conn, error) {
+func EstablishConnection(port string, timeout int) (*net.Conn, error) {
 	for i := 0; i <= timeout; i++ {
 		c, er := net.Dial("tcp", "localhost:"+port)
 		if er == nil {
-			return c, nil
+			log.Println("[Establish Connection]: Connected")
+			return &c, nil
 		}
 		time.Sleep(time.Second)
 	}
 	return nil, errors.New("[Establish Connection]: Connection Timed Out")
 }
 
-func MakeBody(thought string) structs.ThoughtBody {
-	return structs.ThoughtBody{
-		User:    user,
-		Date:    time.Now().Format("Jan/2/2006"),
-		Thought: TrimThought(thought),
-	}
-}
-
-func ReadThought() (string, error) {
-	reader := bufio.NewReader(os.Stdin)
-	thought, er := reader.ReadString('\n')
+func MakeHeader(fileIn *os.File) (*structs.FileHeader, error) {
+	fstat, er := fileIn.Stat()
 	if er != nil {
-		return "", er
-	} else {
-		return thought, nil
+		return &structs.FileHeader{}, er
 	}
+
+	return &structs.FileHeader{
+		User:     user,
+		Date:     time.Now().Format("Jan/2/2006"),
+		Blocks:   fstat.Size()/1024 + 1,
+		TailSize: fstat.Size() % 1024,
+		Filename: fstat.Name(),
+	}, nil
 }
 
-func TrimThought(thought string) string {
-	return strings.TrimSuffix(thought, "\n")
-}
+func HeaderOutbound(tHeader *structs.FileHeader, conn *net.Conn) error {
+	c := *conn
 
-func SendThought(tBody structs.ThoughtBody, conn net.Conn) error { // send packaged thought
-	jsonBody, err := json.Marshal(tBody)
-	if err != nil {
-		return err
+	jsonHeader, er := json.Marshal(*tHeader)
+	if er != nil {
+		return er
 	}
 
-	tHeader := structs.ThoughtHeader{
-		Size: (len(jsonBody))/1024 + 1,
-	}
-	jsonHeader, err := json.Marshal(tHeader)
-	if err != nil {
-		return err
-	}
 	buf := make([]byte, 1024)
 	copy(buf, jsonHeader)
-	_, err = conn.Write(buf)
+	_, er = c.Write(buf)
 
-	if err != nil {
-		return err
+	if er != nil {
+		return er
 	}
+	return nil
+}
 
-	for i := 1; i < tHeader.Size; i++ {
-		buf := jsonBody[i-1 : i*1024]
-		_, err = conn.Write(buf)
-		if err != nil {
-			return err
+func FileOutbound(fileIn *os.File, conn *net.Conn, tHeader *structs.FileHeader) error {
+	c := *conn
+	buf := make([]byte, 1024)
+	for i := int64(1); i <= tHeader.Blocks; i++ {
+		if tHeader.Blocks == i {
+			buf = make([]byte, 1024) // clears out old bytes in the buffer
+		}
+
+		er := func() error {
+			_, er := fileIn.Read(buf)
+			//log.Println(buf)
+			if er != nil {
+				//return err
+			}
+
+			_, er = c.Write(buf)
+			if er != nil {
+				//return err
+			}
+
+			return nil
+		}()
+
+		if er != nil {
+			return er
 		}
 	}
-
-	buf = make([]byte, 1024)
-	copy(buf, jsonBody)
-	_, err = conn.Write(buf)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

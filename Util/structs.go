@@ -1,21 +1,14 @@
 package structs
 
 type SaveFile struct {
-	Thoughts []ThoughtBody `json:"Thoughts"`
+	Files []FileHeader `json:"Thoughts"`
 }
 
-type ThoughtBody struct {
-	Date    string `json:"Date"`
-	User    string `json:"User"`
-	Thought string `json:"Thought"`
-}
-
-type ThoughtHeader struct {
+type FileHeader struct {
+	Filename  string `json:"Filename"`
+	User      string `json:"User"`
+	Date      string `json:"Date"`
 	AuthToken string `json:"Authentication"`
-	Size      int    `json:"Size"`
-}
-
-type ThoughtBubble struct {
-	Head ThoughtHeader `json:"Header"`
-	Body ThoughtBody   `json:"Body"`
+	TailSize  int64  `json:"Tail"`
+	Blocks    int64  `json:"Blocks"`
 }
