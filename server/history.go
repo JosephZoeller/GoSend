@@ -46,7 +46,7 @@ func loadFile() (*structs.SaveFile, error) {
 	return &saves, nil
 }
 
-func hostSave(portNum string) {
+func hostSave(addr string) {
 	http.HandleFunc("/Display", func(res http.ResponseWriter, req *http.Request) {
 		saves, er := loadFile()
 		if er != nil {
@@ -60,8 +60,8 @@ func hostSave(portNum string) {
 
 	errorChan := make(chan error)
 	go func() {
-		errorChan <- http.ListenAndServe(":"+portNum, nil)
-		log.Printf("%s listening on port :%s", server, portNum)
+		errorChan <- http.ListenAndServe(addr, nil)
+		log.Printf("%s listening on port :%s", serverNum, addr)
 	}()
 
 	signalChan := make(chan os.Signal, 1)
@@ -75,7 +75,7 @@ func hostSave(portNum string) {
 			}
 
 		case sig := <-signalChan:
-			log.Printf("Server %s shutting down: %s", server, sig)
+			log.Printf("Server %s shutting down: %s", serverNum, sig)
 			os.Exit(0)
 		}
 	}

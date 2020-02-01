@@ -8,17 +8,19 @@ import (
 
 const savefilename string = "save.json"
 
-var server string
-var port string
+var serverNum string
+var transferAddr string
+var displayAddr string
 
 func main() {
 
-	server = os.Args[1]
-	port = os.Args[2]
+	serverNum = os.Args[1]
+	transferAddr = os.Args[2]
+	displayAddr = os.Args[3]
 	
-	//go HostSave("8081")
+	go hostSave(displayAddr)
 	
-	conn, er := getSession(port)
+	conn, er := getSession(transferAddr)
 	if er != nil {
 		log.Println("Get Session Error: ", er)
 		return
@@ -46,8 +48,8 @@ func main() {
 }
 
 // Listens to a port, awaiting a connection.
-func getSession(port string) (*net.Conn, error) {
-	ln, er := net.Listen("tcp", "localhost:"+port)
+func getSession(address string) (*net.Conn, error) {
+	ln, er := net.Listen("tcp", address)
 	if er != nil {
 		log.Println(er)
 		return nil, er

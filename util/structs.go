@@ -9,6 +9,6 @@ type FileHeader struct {
 	User      string `json:"User"`
 	Date      string `json:"Date"`
 	AuthToken string `json:"Authentication"`
-	TailSize  int  `json:"Tail"`
 	Blocks    int64  `json:"Blocks"`
+	TailSize  int    `json:"Tail"`
 }

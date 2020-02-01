@@ -21,18 +21,24 @@
         </style>
     </head>
     <body>
-        <h2>Shower Thoughts</h2>
+        <h2>Files</h2>
         <table>
             <tr> <!--table row-->
-                <th>Date</th> <!--table header-->
+                <th>Filename</th>
                 <th>User</th>
-                <th>Thought</th>
+                <th>Date</th> <!--table header-->
+                <th>Authentication</th>
+                <th>Blocks</th>
+                <th>Tail</th>
             </tr>
-            {{range .Thoughts}}
+            {{range .Files}}
             <tr>
-                <td>{{.Date}}</td>
+                <td>{{.Filename}}</td>
                 <td>{{.User}}</td>
-                <td>{{.Thought}}</td>
+                <td>{{.Date}}</td>
+                <td>{{.AuthToken}}</td>
+                <td>{{.Blocks}}</td>
+                <td>{{.TailSize}}</td>
             </tr>
             {{end}}
         </table>
