@@ -1,7 +1,7 @@
 package structs
 
 type SaveFile struct {
-	Files []FileHeader `json:"Thoughts"`
+	Files []FileHeader `json:"Files"`
 }
 
 type FileHeader struct {
@@ -9,6 +9,6 @@ type FileHeader struct {
 	User      string `json:"User"`
 	Date      string `json:"Date"`
 	AuthToken string `json:"Authentication"`
-	TailSize  int64  `json:"Tail"`
+	TailSize  int  `json:"Tail"`
 	Blocks    int64  `json:"Blocks"`
 }
