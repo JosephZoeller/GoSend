@@ -4,22 +4,22 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
+
+	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-const savefilename string = "save.json"
-
-var serverNum string
 var transferAddr string
-var displayAddr string
+
+//var displayAddr string
 
 func main() {
 
-	serverNum = os.Args[1]
-	transferAddr = os.Args[2]
-	displayAddr = os.Args[3]
-	
-	go hostSave(displayAddr)
-	
+	transferAddr = os.Args[1]
+	//displayAddr = os.Args[2]
+
+	//go hostSave(displayAddr)
+
 	conn, er := getSession(transferAddr)
 	if er != nil {
 		log.Println("Get Session Error: ", er)
@@ -28,23 +28,19 @@ func main() {
 	c := *conn
 	defer c.Close()
 
-	tHeader, er := headerInbound(conn)
+	fHeader, er := transit.HeaderInbound(conn)
 	if er != nil {
 		log.Println("Create Error: ", er)
 		return
 	}
 
-	fileCreate, er := os.Create(tHeader.Filename)
+	er = transit.FileInbound(fHeader, conn) 
 	if er != nil {
-		log.Println("Create Error: ", er)
+		log.Println(er)
 		return
 	}
-	defer fileCreate.Close()
 
-	if fileInbound(tHeader, conn, fileCreate) != nil {
-		return
-	}
-	appendSave(tHeader)
+	//appendSave(fHeader)
 }
 
 // Listens to a port, awaiting a connection.

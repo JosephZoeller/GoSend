@@ -1,4 +1,4 @@
-package main
+package transit
 
 import (
 	"encoding/json"
@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	structs "github.com/JosephZoeller/gmg/util"
 )
 
-func saveFile(s *structs.SaveFile) error {
+const savefilename string = "save.json"
+
+func saveToFile(s *saveFile) error {
 	file, er := os.Create(savefilename)
 	if er != nil {
 		return er
@@ -28,8 +28,8 @@ func saveFile(s *structs.SaveFile) error {
 	return nil
 }
 
-func loadFile() (*structs.SaveFile, error) {
-	saves := structs.SaveFile{}
+func loadFromFile() (*saveFile, error) {
+	saves := saveFile{}
 
 	file, er := os.Open(savefilename)
 	if er != nil {
@@ -48,7 +48,7 @@ func loadFile() (*structs.SaveFile, error) {
 
 func hostSave(addr string) {
 	http.HandleFunc("/Display", func(res http.ResponseWriter, req *http.Request) {
-		saves, er := loadFile()
+		saves, er := loadFromFile()
 		if er != nil {
 			log.Println(er)
 		}
@@ -61,7 +61,7 @@ func hostSave(addr string) {
 	errorChan := make(chan error)
 	go func() {
 		errorChan <- http.ListenAndServe(addr, nil)
-		log.Printf("%s listening on port :%s", serverNum, addr)
+		log.Printf("Listening on port :%s", addr)
 	}()
 
 	signalChan := make(chan os.Signal, 1)
@@ -75,22 +75,22 @@ func hostSave(addr string) {
 			}
 
 		case sig := <-signalChan:
-			log.Printf("Server %s shutting down: %s", serverNum, sig)
+			log.Printf("Shutting down: %s", sig)
 			os.Exit(0)
 		}
 	}
 }
 
-func appendSave(tHeader *structs.FileHeader) {
+func appendSave(tHeader *fileHeader) {
 
-	saves, er := loadFile()
+	saves, er := loadFromFile()
 	if er != nil {
 		log.Println(er)
 	}
 
 	saves.Files = append(saves.Files, *tHeader)
 
-	er = saveFile(saves)
+	er = saveToFile(saves)
 	if er != nil {
 		log.Println(er)
 	} else {

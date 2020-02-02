@@ -6,9 +6,10 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-var user string = os.Getenv("USER")
 var transferAddr string
 var filename string
 
@@ -30,18 +31,13 @@ func main() {
 	c := *conn
 	defer c.Close()
 
-	tHeader, er := makeHeader(fileIn)
-	if er != nil {
-		log.Println(er)
-		return
-	}
-	er = headerOutbound(tHeader, conn)
+	er = transit.HeaderOutbound(fileIn, conn)
 	if er != nil {
 		log.Println(er)
 		return
 	}
 
-	er = fileOutbound(fileIn, conn, tHeader)
+	er = transit.FileOutbound(fileIn, conn)
 	if er != nil {
 		log.Println(er)
 	}
