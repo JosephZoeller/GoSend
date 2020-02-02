@@ -8,7 +8,7 @@ import (
 )
 
 // Listens to a port, awaiting a connection.
-func GetSession(address string) (*net.Conn, error) {
+func OpenConnection(address string) (*net.Conn, error) {
 	ln, er := net.Listen("tcp", address)
 	if er != nil {
 		log.Println(er)
@@ -25,7 +25,7 @@ func GetSession(address string) (*net.Conn, error) {
 }
 
 // Anticipates a connection with the port. Times out after t seconds.
-func EstablishConnection(addr string, t int) (*net.Conn, error) {
+func SeekConnection(addr string, t int) (*net.Conn, error) {
 	for i := 0; i <= t; i++ {
 		c, er := net.Dial("tcp", addr)
 		if er == nil {

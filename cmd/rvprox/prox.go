@@ -8,35 +8,35 @@ import (
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-var transferAddr string
-var filename string
+var listenAddr string
+var speakAddr string
 
 func main() {
-	filename = os.Args[1]
-	transferAddr = os.Args[2]
+	listenAddr = os.Args[1]
+	speakAddr = os.Args[2]
 
-	fileIn, er := os.Open(filename)
+	lCon, er := connect.OpenConnection(listenAddr)
 	if er != nil {
 		log.Println(er)
 		return
 	}
 
-	conn, er := connect.EstablishConnection(transferAddr, 15)
-	if er != nil {
-		log.Println(er)
-		return
-	}
-	c := *conn
-	defer c.Close()
-
-	er = transit.HeaderOutbound(fileIn, conn)
+	sCon, er := connect.SeekConnection(speakAddr, 30)
 	if er != nil {
 		log.Println(er)
 		return
 	}
 
-	er = transit.FileOutbound(fileIn, conn)
+	fHead, er := transit.PassHeader(lCon, sCon)
 	if er != nil {
 		log.Println(er)
+		return
 	}
+
+	er = transit.PassFile(fHead, lCon, sCon)
+	if er != nil {
+		log.Println(er)
+		return
+	}
+
 }

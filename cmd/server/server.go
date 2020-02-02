@@ -19,7 +19,7 @@ func main() {
 
 	//go hostSave(displayAddr)
 
-	conn, er := connect.GetSession(transferAddr)
+	conn, er := connect.OpenConnection(transferAddr)
 	if er != nil {
 		log.Println("Get Session Error: ", er)
 		return
