@@ -10,6 +10,7 @@ import (
 // Listens to a port, awaiting a connection.
 func OpenConnection(address string) (*net.Conn, error) {
 	ln, er := net.Listen("tcp", address)
+	defer ln.Close()
 	if er != nil {
 		log.Println(er)
 		return nil, er
