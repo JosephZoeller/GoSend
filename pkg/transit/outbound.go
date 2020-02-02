@@ -5,8 +5,6 @@ import (
 	"net"
 	"os"
 	"runtime"
-
-	//"sync"
 	"time"
 )
 
@@ -41,19 +39,11 @@ func FileOutbound(fileOut *os.File, conn *net.Conn) error {
 	if er != nil {
 		return er
 	}
-	
+
+	buf := make([]byte, 1024)
 	for i := int64(0); i <= fHead.Blocks; i++ {
-		buf := make([]byte, 1024)
-
 		_, er = fileOut.Read(buf)
-		if er != nil {
-			return er
-		}
-
-		_, er = c.Write(buf)
-		if er != nil {
-			return er
-		}
+		c.Write(buf)
 	}
 
 	return nil

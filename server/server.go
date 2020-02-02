@@ -2,11 +2,10 @@ package main
 
 import (
 	"log"
-	"net"
 	"os"
-	"time"
 
 	"github.com/JosephZoeller/gmg/pkg/transit"
+	"github.com/JosephZoeller/gmg/pkg/connect"
 )
 
 var transferAddr string
@@ -20,7 +19,7 @@ func main() {
 
 	//go hostSave(displayAddr)
 
-	conn, er := getSession(transferAddr)
+	conn, er := connect.GetSession(transferAddr)
 	if er != nil {
 		log.Println("Get Session Error: ", er)
 		return
@@ -41,21 +40,4 @@ func main() {
 	}
 
 	//appendSave(fHeader)
-}
-
-// Listens to a port, awaiting a connection.
-func getSession(address string) (*net.Conn, error) {
-	ln, er := net.Listen("tcp", address)
-	if er != nil {
-		log.Println(er)
-		return nil, er
-	}
-
-	conn, er := ln.Accept()
-	if er != nil {
-		log.Println(er)
-		return nil, er
-	}
-
-	return &conn, er
 }

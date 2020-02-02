@@ -3,6 +3,7 @@ package transit
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net"
 	"os"
 )
@@ -14,18 +15,9 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 	if er != nil {
 		return er
 	}
-
+	//buf := make([]byte, 1024)
 	for i := int64(0); i <= fHead.Blocks; i++ {
-		buf := make([]byte, 1024)
-		_, er = c.Read(buf)
-		if er != nil {
-			return er
-		}
-
-		_, er = fileCreate.Write(buf)
-		if er != nil {
-			return er
-		}
+		io.CopyN(fileCreate, c, 1024)
 	}
 
 	er = fileCreate.Truncate(fHead.Blocks*1024 + fHead.TailSize)
