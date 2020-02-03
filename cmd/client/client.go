@@ -8,41 +8,47 @@ import (
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-var transferAddr string
-var filename string
+var outAddr string
+var filenames []string
+
+func init() {
+	outAddr, filenames = connect.OutArgs()
+}
 
 func main() {
-	filename = os.Args[1]
-	transferAddr = os.Args[2]
+	for _, v := range(filenames) {
+		er := send(v)
+		if er != nil {
+			log.Println(er)
+		}
+	}
+}
 
+func send(filename string) error {
 	fileIn, er := os.Open(filename)
 	if er != nil {
-		log.Println(er)
-		return
+		return er
 	}
 
-	conn, er := connect.SeekConnection(transferAddr, 30)
+	conn, er := connect.SeekConnection(outAddr, 30)
 	if er != nil {
-		log.Println(er)
-		return
+		return er
 	}
-	c := *conn
-	defer c.Close()
+	c := *conn; defer c.Close()
 
 	fHead, er := transit.MakeHeader(fileIn)
 	if er != nil {
-		log.Println(er)
-		return
+		return er
 	}
 
 	er = transit.HeaderOutbound(fHead, conn)
 	if er != nil {
-		log.Println(er)
-		return
+		return er
 	}
 
 	er = transit.FileOutbound(fileIn, conn)
 	if er != nil {
-		log.Println(er)
+		return er
 	}
+	return nil
 }

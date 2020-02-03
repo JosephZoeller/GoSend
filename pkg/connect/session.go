@@ -9,14 +9,14 @@ import (
 
 // Listens to a port, awaiting a connection.
 func OpenConnection(address string) (*net.Conn, error) {
-	ln, er := net.Listen("tcp", address)
-	defer ln.Close()
+	ln, er := net.Listen("tcp", address); defer ln.Close()
 	if er != nil {
 		log.Println(er)
 		return nil, er
 	}
 
 	conn, er := ln.Accept()
+	log.Println("[Open Connection]: Connection Established")
 	if er != nil {
 		log.Println(er)
 		return nil, er
@@ -30,7 +30,7 @@ func SeekConnection(addr string, t int) (*net.Conn, error) {
 	for i := 0; i <= t; i++ {
 		c, er := net.Dial("tcp", addr)
 		if er == nil {
-			log.Println("[Establish Connection]: Connected")
+			log.Println("[Seek Connection]: Connection Established")
 			return &c, nil
 		}
 		time.Sleep(time.Second)

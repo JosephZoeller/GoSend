@@ -8,40 +8,31 @@ import (
 	"syscall"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
-	"github.com/JosephZoeller/gmg/pkg/jsonUtil"
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-type save struct {
-	Servers    []id `json:"Servers"`
-	ProxyPorts []id `json:"ProxyPorts"`
-}
-
-type id struct {
-	IP   string `json:"IP"`
-	Port string `json:"Port"`
-}
-
-var saveFile = "addresses.json"
-var addresses = save{}
-var lastSpeak = ""
+var inAddrs []string
+var outAddrs []string
+var lastServe = ""
 
 // 1.) open the listeners listed in the json
 // 2.) each listener will wait for a connection
 // 3.) after a connection, round robin the server ports
 // 4.) when a connection ends, the listener is available for another connection
 
+func init() {
+	inAddrs, outAddrs = connect.ThroughArgs()
+}
+
 func main() {
-	jsonUtil.LoadFromFile(saveFile, &addresses)
-	log.Printf("Registered %d ports", len(addresses.ProxyPorts))
-	for i, v := range addresses.ProxyPorts {
-		go OpenListener(v.IP + v.Port)
-		log.Printf("Proxy %d listening at %s", i, (v.IP + v.Port))
+	log.Printf("Registered %d ports", len(inAddrs))
+	for i, v := range inAddrs {
+		go OpenListener(v)
+		log.Printf("Proxy %d listening at %s", i+1, v)
 	}
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT)
-
 	<-signalChan
 }
 
@@ -50,7 +41,12 @@ func OpenListener(address string) {
 	ln, _ := net.Listen("tcp", address)
 	for {
 		lCon, _ := ln.Accept()
-		DoConnect(&lCon, pickSpeak())
+		for {
+			er := DoConnect(&lCon, pickServe())
+			if er == nil {
+				break
+			}
+		}
 		lCon.Close()
 	}
 }
@@ -63,6 +59,7 @@ func DoConnect(lCon *net.Conn, sAddr string) error {
 		log.Println(er)
 		return er
 	}
+	s := *sCon; defer s.Close()
 
 	fHead, er := transit.PassHeader(lCon, sCon)
 	if er != nil {
@@ -73,25 +70,22 @@ func DoConnect(lCon *net.Conn, sAddr string) error {
 	return transit.PassFile(fHead, lCon, sCon)
 }
 
-func pickSpeak() string {
-	addrsCnt := len(addresses.Servers)
+func pickServe() string {
+	addrsCnt := len(outAddrs)
 
-	if lastSpeak == "" {
-		this := addresses.Servers[0]
-		lastSpeak = this.IP + this.Port
-		log.Println("Choosing " + lastSpeak + " to serve")
-		return lastSpeak
+	if lastServe == "" {
+		lastServe = outAddrs[0]
+		log.Println("Choosing " + lastServe + " to serve")
+		return lastServe
 	}
 
 	for i := 0; i < addrsCnt; i++ {
-		this := addresses.Servers[i]
-		if lastSpeak == this.IP+this.Port {
-			next := addresses.Servers[(i+1)%addrsCnt]
-			lastSpeak = next.IP + next.Port
-			log.Println("Choosing " + lastSpeak + " to serve")
+		if lastServe == outAddrs[i] {
+			lastServe = outAddrs[(i+1)%addrsCnt]
+			log.Println("Choosing " + lastServe + " to serve")
 			break
 		}
 	}
 
-	return lastSpeak
+	return lastServe
 }
