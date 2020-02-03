@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
+	"github.com/JosephZoeller/gmg/pkg/logUtil"
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
@@ -17,10 +19,19 @@ func init() {
 
 // Transmits files to a target address, one file at a time.
 func main() {
+	if outAddr == "" {
+		log.Println(logUtil.FormatError("Cient args", errors.New("No outbound address declared by user.")))
+		return
+	} else if len(filenames) == 0 {
+		log.Println(logUtil.FormatError("Client args", errors.New("No filenames declared by user.")))
+		return
+	}
+
 	for _, v := range(filenames) {
 		er := send(v)
 		if er != nil {
 			log.Println(er)
+			log.Println("Failed to send " + v)
 		}
 	}
 }
@@ -35,23 +46,23 @@ func send(filename string) error {
 
 	conn, er := connect.SeekConnection(outAddr, 30)
 	if er != nil {
-		return er
+		return logUtil.FormatError("Client send", er)
 	}
 	c := *conn; defer c.Close()
 
 	fHead, er := transit.MakeHeader(fileIn)
 	if er != nil {
-		return er
+		return logUtil.FormatError("Client send", er)
 	}
 
 	er = transit.HeaderOutbound(fHead, conn)
 	if er != nil {
-		return er
+		return logUtil.FormatError("Client send", er)
 	}
 
 	er = transit.FileOutbound(fileIn, conn)
 	if er != nil {
-		return er
+		return logUtil.FormatError("Client send", er)
 	}
 	return nil
 }

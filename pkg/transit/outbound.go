@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net"
 	"os"
+
+	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 // HeaderOutbound uploads a file header to the connection stream.
@@ -12,7 +14,7 @@ func HeaderOutbound(fHead *fileHeader, conn *net.Conn) error {
 
 	jsonHeader, er := json.Marshal(fHead)
 	if er != nil {
-		return er
+		return logUtil.FormatError("Transit HeaderOutbound", er)
 	}
 
 	buf := make([]byte, 1024)
@@ -20,7 +22,7 @@ func HeaderOutbound(fHead *fileHeader, conn *net.Conn) error {
 	_, er = c.Write(buf)
 
 	if er != nil {
-		return er
+		return logUtil.FormatError("Transit HeaderOutbound", er)
 	}
 	return nil
 }
@@ -30,12 +32,12 @@ func FileOutbound(fileOut *os.File, conn *net.Conn) error {
 	c := *conn
 	fstat, er := fileOut.Stat()
 	if er != nil {
-		return er
+		return logUtil.FormatError("Transit FileOutbound", er)
 	}
 
 	buf := make([]byte, 1024)
 	for i := int64(0); i <= fstat.Size()/1024; i++ {
-		_, er = fileOut.Read(buf)
+		fileOut.Read(buf)
 		c.Write(buf)
 	}
 

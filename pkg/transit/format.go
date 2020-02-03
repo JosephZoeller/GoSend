@@ -4,6 +4,8 @@ import (
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 type saveFile struct {
@@ -16,14 +18,14 @@ type fileHeader struct {
 	Date      string `json:"Date"`
 	AuthToken string `json:"Authentication"`
 	Blocks    int64  `json:"Blocks"`
-	TailSize  int64    `json:"Tail"`
+	TailSize  int64  `json:"Tail"`
 }
 
 // creates a header which breifs the transmission reciever on what to expect from the incoming file.
 func MakeHeader(file *os.File) (*fileHeader, error) {
 	fstat, er := file.Stat()
 	if er != nil {
-		return &fileHeader{}, er
+		return &fileHeader{}, logUtil.FormatError("Transit MakeHeader", er)
 	}
 
 	return &fileHeader{

@@ -2,25 +2,26 @@ package connect
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"time"
+
+	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 // Listens to an address, anticipating a connection.
 func OpenConnection(address string) (*net.Conn, error) {
 	ln, er := net.Listen("tcp", address)
-	defer ln.Close()
 	if er != nil {
-		log.Println(er)
-		return nil, er
+		return nil, logUtil.FormatError("Connect OpenConnection", er)
 	}
+	defer ln.Close()
 
 	conn, er := ln.Accept()
-	log.Println("[Open Connection]: Connection Established")
+	log.Println("[Connect OpenConnection]: Connection Established")
 	if er != nil {
-		log.Println(er)
-		return nil, er
+		return nil, logUtil.FormatError("Connect OpenConnection", er)
 	}
 
 	return &conn, er
@@ -36,5 +37,5 @@ func SeekConnection(address string, t int) (*net.Conn, error) {
 		}
 		time.Sleep(time.Second)
 	}
-	return nil, errors.New("[Establish Connection]: Connection Timed Out")
+	return nil, logUtil.FormatError("Connect SeekConnection", errors.New(fmt.Sprintf("Timeout after %d Seconds", t)))
 }

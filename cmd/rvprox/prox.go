@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"net"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
+	"github.com/JosephZoeller/gmg/pkg/logUtil"
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
@@ -27,10 +29,19 @@ func init() {
 
 // Opens all proxy listeners, then awaits a signal interrupt to terminate.
 func main() {
+
+	if len(inAddrs) == 0 {
+		log.Println(logUtil.FormatError("Proxy args", errors.New("No inbound addresses declared by user.")))
+		return
+	} else if len(outAddrs) == 0 {
+		log.Println(logUtil.FormatError("Proxy args", errors.New("No outbound addresses declared by user.")))
+		return
+	}
+
 	log.Printf("Registered %d ports", len(inAddrs))
 	for i, v := range inAddrs {
 		go openListener(v)
-		log.Printf("Proxy %d listening at %s", i+1, v)
+		log.Printf("Proxy '%d' listening at '%s'", i+1, v)
 	}
 
 	signalChan := make(chan os.Signal, 1)
@@ -42,12 +53,17 @@ func main() {
 func openListener(address string) {
 
 	for {
-		lCon, _ := connect.OpenConnection(address)
+		lCon, er := connect.OpenConnection(address)
+		if er != nil {
+			log.Println(logUtil.FormatError("Proxy openListener", er))
+			break
+		}
 		for {
-			er := sendToAddress(lCon, pickAddress())
+			er = sendToAddress(lCon, pickAddress())
 			if er == nil {
 				break
 			}
+			log.Println(logUtil.FormatError("Proxy openListener", er))
 		}
 		c := *lCon
 		c.Close()
@@ -60,25 +76,31 @@ func sendToAddress(lCon *net.Conn, sAddr string) error {
 
 	sCon, er := connect.SeekConnection(sAddr, 5)
 	if er != nil {
-		log.Println(er)
-		return er
+		return logUtil.FormatError("Proxy sendToAddress", er)
 	}
-	log.Println("The reverse proxy has connected to " + sAddr)
+	log.Println("[Proxy sendToAddress]: The reverse proxy has connected to " + sAddr)
 	s := *sCon
 	defer s.Close()
 
 	fHead, er := transit.PassHeader(lCon, sCon)
 	if er != nil {
-		log.Println(er)
-		return er
+		return logUtil.FormatError("Proxy sendToAddress", er)
 	}
 
-	return transit.PassFile(fHead, lCon, sCon)
+	er = transit.PassFile(fHead, lCon, sCon)
+	if er != nil {
+		return logUtil.FormatError("Proxy sendToAddress", er)
+	}
+
+	return nil
 }
 
 // Load balancer. Selects (via round-robin) an address to speak to from the CLI argument.
 func pickAddress() string {
 	addrsCnt := len(outAddrs)
+	if addrsCnt < 0 {
+
+	}
 
 	if lastServe == "" {
 		lastServe = outAddrs[0]
