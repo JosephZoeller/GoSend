@@ -15,6 +15,7 @@ func init() {
 	outAddr, filenames = connect.OutArgs()
 }
 
+// Transmits files to a target address, one file at a time.
 func main() {
 	for _, v := range(filenames) {
 		er := send(v)
@@ -24,6 +25,8 @@ func main() {
 	}
 }
 
+// Attempt to speak with an address and, upon connecting, sends the file header information followed by the file.
+// Checks to speak with the address each second for 30 seconds, then times out.
 func send(filename string) error {
 	fileIn, er := os.Open(filename)
 	if er != nil {

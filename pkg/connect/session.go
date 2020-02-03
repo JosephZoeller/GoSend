@@ -7,9 +7,10 @@ import (
 	"time"
 )
 
-// Listens to a port, awaiting a connection.
+// Listens to an address, anticipating a connection.
 func OpenConnection(address string) (*net.Conn, error) {
-	ln, er := net.Listen("tcp", address); defer ln.Close()
+	ln, er := net.Listen("tcp", address)
+	defer ln.Close()
 	if er != nil {
 		log.Println(er)
 		return nil, er
@@ -25,10 +26,10 @@ func OpenConnection(address string) (*net.Conn, error) {
 	return &conn, er
 }
 
-// Anticipates a connection with the port. Times out after t seconds.
-func SeekConnection(addr string, t int) (*net.Conn, error) {
+// Attempts to connect with the address every second. Times out after t seconds.
+func SeekConnection(address string, t int) (*net.Conn, error) {
 	for i := 0; i <= t; i++ {
-		c, er := net.Dial("tcp", addr)
+		c, er := net.Dial("tcp", address)
 		if er == nil {
 			log.Println("[Seek Connection]: Connection Established")
 			return &c, nil

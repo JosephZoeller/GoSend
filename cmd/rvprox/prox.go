@@ -15,19 +15,21 @@ var inAddrs []string
 var outAddrs []string
 var lastServe = ""
 
-// 1.) open the listeners listed in the json
-// 2.) each listener will wait for a connection
-// 3.) after a connection, round robin the server ports
-// 4.) when a connection ends, the listener is available for another connection
+// 1.) Opens the listening addresses (inAddrs)
+// 2.) Each listening address awaits a connection
+// 3.) Upon connecting with a host, the proxy chooses (round-robin) an address from the speaking addresses (outAddrs)
+// 4.) If the speaking address connects to the address, transmit the data. Otherwise, try the next speaking address.
+// 5.) After the data is transmitted, the connection is closed and the listener awaits a new connection.
 
 func init() {
 	inAddrs, outAddrs = connect.ThroughArgs()
 }
 
+// Opens all proxy listeners, then awaits a signal interrupt to terminate.
 func main() {
 	log.Printf("Registered %d ports", len(inAddrs))
 	for i, v := range inAddrs {
-		go OpenListener(v)
+		go openListener(v)
 		log.Printf("Proxy %d listening at %s", i+1, v)
 	}
 
@@ -36,30 +38,34 @@ func main() {
 	<-signalChan
 }
 
-func OpenListener(address string) {
+// Opens address to listen to and, upon connecting, select a speaking address and reroute the transmission.
+func openListener(address string) {
 
-	ln, _ := net.Listen("tcp", address)
 	for {
-		lCon, _ := ln.Accept()
+		lCon, _ := connect.OpenConnection(address)
 		for {
-			er := DoConnect(&lCon, pickServe())
+			er := sendToAddress(lCon, pickAddress())
 			if er == nil {
 				break
 			}
 		}
-		lCon.Close()
+		c := *lCon
+		c.Close()
 	}
 }
 
-func DoConnect(lCon *net.Conn, sAddr string) error {
+// Reroutes the transmission being sent from the listening connection to the speaking connection.
+// Attempts to speak to an address for 5 seconds before getting bored.
+func sendToAddress(lCon *net.Conn, sAddr string) error {
 
 	sCon, er := connect.SeekConnection(sAddr, 5)
-	log.Println("The reverse proxy has connected to " + sAddr)
 	if er != nil {
 		log.Println(er)
 		return er
 	}
-	s := *sCon; defer s.Close()
+	log.Println("The reverse proxy has connected to " + sAddr)
+	s := *sCon
+	defer s.Close()
 
 	fHead, er := transit.PassHeader(lCon, sCon)
 	if er != nil {
@@ -70,7 +76,8 @@ func DoConnect(lCon *net.Conn, sAddr string) error {
 	return transit.PassFile(fHead, lCon, sCon)
 }
 
-func pickServe() string {
+// Load balancer. Selects (via round-robin) an address to speak to from the CLI argument.
+func pickAddress() string {
 	addrsCnt := len(outAddrs)
 
 	if lastServe == "" {

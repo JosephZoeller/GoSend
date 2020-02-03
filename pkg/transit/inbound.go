@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+// FileInbound Downloads the connection stream to a file.
+// Requires a file header to determine the size and name of the file.
 func FileInbound(fHead *fileHeader, con *net.Conn) error {
 	c := *con
 
@@ -15,7 +17,7 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 	if er != nil {
 		return er
 	}
-	//buf := make([]byte, 1024)
+
 	for i := int64(0); i <= fHead.Blocks; i++ {
 		io.CopyN(fileCreate, c, 1024)
 	}
@@ -32,6 +34,7 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 	return nil
 }
 
+// HeaderInbound Downloads a file header from the connection stream.
 func HeaderInbound(con *net.Conn) (*fileHeader, error) {
 	c := *con
 	tHeader := fileHeader{}

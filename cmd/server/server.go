@@ -12,11 +12,11 @@ import (
 
 var inAddrs []string
 
-//var displayAddr string
 func init() {
 	inAddrs = connect.InArgs()
 }
 
+// Opens listening connections, then awaits a signal interruption to terminate.
 func main() {
 
 	for i :=0; i < len(inAddrs); i++ {
@@ -28,10 +28,11 @@ func main() {
 	<-signalChan
 }
 
- func serve(transferAddr string) {
+// Opens a connection on the transferAddress and, upon connecting, receives the transmission data.
+func serve(transferAddress string) {
 	 for {
-		log.Println("Open connection at " + transferAddr)
-		conn, er := connect.OpenConnection(transferAddr)
+		log.Println("Open connection at " + transferAddress)
+		conn, er := connect.OpenConnection(transferAddress)
 		if er != nil {
 			log.Println("Get Session Error: ", er)
 			return

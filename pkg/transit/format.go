@@ -19,7 +19,7 @@ type fileHeader struct {
 	TailSize  int64    `json:"Tail"`
 }
 
-// creates a pre-file header to communicate with the server.
+// creates a header which breifs the transmission reciever on what to expect from the incoming file.
 func MakeHeader(file *os.File) (*fileHeader, error) {
 	fstat, er := file.Stat()
 	if er != nil {
@@ -35,6 +35,7 @@ func MakeHeader(file *os.File) (*fileHeader, error) {
 	}, nil
 }
 
+// Gets the environment username. Operating System-dependant.
 func getDefaultName() string {
 	var userEnvVar string
 	if runtime.GOOS == "windows" {

@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-// Sends a pre-file header (max 1kb) to the tcp connection
+// HeaderOutbound uploads a file header to the connection stream.
 func HeaderOutbound(fHead *fileHeader, conn *net.Conn) error {
 	c := *conn
 
@@ -25,8 +25,7 @@ func HeaderOutbound(fHead *fileHeader, conn *net.Conn) error {
 	return nil
 }
 
-// Reads in bytes from a file as it streams them to the given connection.
-// Reads len(file) bytes from the file and writes len(file) + (1024 - len(file)%1024) bytes to the connection.
+// FileOutbound uploads a file to the connection stream.
 func FileOutbound(fileOut *os.File, conn *net.Conn) error {
 	c := *conn
 	fstat, er := fileOut.Stat()
