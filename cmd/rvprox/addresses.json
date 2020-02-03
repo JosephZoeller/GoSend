@@ -1,0 +1,14 @@
+{
+  "Servers": [
+    {
+      "IP": "localhost",
+      "Port": ":8080"
+    }
+  ],
+  "ProxyPorts": [
+    {
+      "IP": "localhost",
+      "Port": ":8081"
+    }
+  ]
+}

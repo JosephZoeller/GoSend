@@ -2,6 +2,7 @@ package jsonUtil
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 )
 
@@ -22,11 +23,9 @@ func SaveToFile(fileName string, v interface{}) error {
 }
 
 func LoadFromFile(fileName string, v interface{}) error {
-	file, er := os.Open(fileName)
+	b, er := ioutil.ReadFile(fileName)
 	if er != nil {
 		return er
 	}
-	defer file.Close()
-
-	return json.NewDecoder(file).Decode(v)
+	return json.Unmarshal(b, v)
 }

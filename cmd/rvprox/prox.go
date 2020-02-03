@@ -1,92 +1,64 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"net"
 	"os"
-	"sync"
+	"os/signal"
+	"syscall"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
 	"github.com/JosephZoeller/gmg/pkg/jsonUtil"
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-
 type save struct {
-	Servers []server `json:"Servers"`
+	Servers    []id `json:"Servers"`
+	ProxyPorts []id `json:"ProxyPorts"`
 }
 
-type server struct {
+type id struct {
 	IP   string `json:"IP"`
 	Port string `json:"Port"`
 }
 
-var serverFile = "servers.json"
-var lock = sync.Mutex{}
+var saveFile = "addresses.json"
+var addresses = save{}
+var lastSpeak = ""
+
+// 1.) open the listeners listed in the json
+// 2.) each listener will wait for a connection
+// 3.) after a connection, round robin the server ports
+// 4.) when a connection ends, the listener is available for another connection
 
 func main() {
-	listenAddr := os.Args[1]
-	speakAddrs := save{}
-	jsonUtil.LoadFromFile(serverFile, speakAddrs)
+	jsonUtil.LoadFromFile(saveFile, &addresses)
+	log.Printf("Registered %d ports", len(addresses.ProxyPorts))
+	for i, v := range addresses.ProxyPorts {
+		go OpenListener(v.IP + v.Port)
+		log.Printf("Proxy %d listening at %s", i, (v.IP + v.Port))
+	}
 
-	var sPick string = ""
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT)
+
+	<-signalChan
+}
+
+func OpenListener(address string) {
+
+	ln, _ := net.Listen("tcp", address)
 	for {
-		lock.Lock()
-		pickSpeak(&sPick, speakAddrs)
-		go OnConnect(listenAddr, sPick)
+		lCon, _ := ln.Accept()
+		DoConnect(&lCon, pickSpeak())
+		lCon.Close()
 	}
-
 }
 
-func pickSpeak(lastSpeak *string, sAddrs save) error {
-	addrsCnt := len(sAddrs.Servers)
-	if addrsCnt == 0 {
-		return errors.New("No servers configured in " + serverFile)
-	}
+func DoConnect(lCon *net.Conn, sAddr string) error {
 
-	if *lastSpeak == "" {
-		this := sAddrs.Servers[0]
-		*lastSpeak = this.IP + this.Port
-		log.Println("Choosing " + *lastSpeak + " to serve")
-		return nil
-	}
-	
-	for i := 0; i < addrsCnt; i++ {
-		this := sAddrs.Servers[i]
-		if *lastSpeak == this.IP + this.Port{
-			next := sAddrs.Servers[(i+1)%addrsCnt]
-			*lastSpeak = next.IP + next.Port
-			log.Println("Choosing " + *lastSpeak + " to serve")
-			break
-		}
-	}
-
-	return nil
-}
-
-func OnConnect(lAddr, sAddr string) error {
-
-	lCon, sCon, er := func() (*net.Conn, *net.Conn, error) {
-		defer lock.Unlock()
-		log.Println("Open to connect on " + lAddr)
-
-		l, er := connect.OpenConnection(lAddr)
-		if er != nil {
-			return nil, nil, er
-		}
-		log.Println("A client has connected to " + lAddr)
-
-		s, er := connect.SeekConnection("", 5)
-		if er != nil {
-			c := *l; c.Close()
-			return nil, nil, er
-		}
-		log.Println("The reverse proxy has connected to " + sAddr)
-
-		return l, s, nil
-	}()
-
+	sCon, er := connect.SeekConnection(sAddr, 5)
+	log.Println("The reverse proxy has connected to " + sAddr)
 	if er != nil {
 		log.Println(er)
 		return er
@@ -99,4 +71,27 @@ func OnConnect(lAddr, sAddr string) error {
 	}
 
 	return transit.PassFile(fHead, lCon, sCon)
+}
+
+func pickSpeak() string {
+	addrsCnt := len(addresses.Servers)
+
+	if lastSpeak == "" {
+		this := addresses.Servers[0]
+		lastSpeak = this.IP + this.Port
+		log.Println("Choosing " + lastSpeak + " to serve")
+		return lastSpeak
+	}
+
+	for i := 0; i < addrsCnt; i++ {
+		this := addresses.Servers[i]
+		if lastSpeak == this.IP+this.Port {
+			next := addresses.Servers[(i+1)%addrsCnt]
+			lastSpeak = next.IP + next.Port
+			log.Println("Choosing " + lastSpeak + " to serve")
+			break
+		}
+	}
+
+	return lastSpeak
 }
