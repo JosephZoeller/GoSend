@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
 	"github.com/JosephZoeller/gmg/pkg/logUtil"
@@ -20,7 +21,7 @@ func init() {
 
 // Opens listening connections, then awaits a signal interruption to terminate.
 func main() {
-	if len(inAddrs) == 0 {
+	if len(inAddrs) == 1 && inAddrs[0] == "" {
 		log.Println(logUtil.FormatError("Server args", errors.New("No inbound addresses declared by user.")))
 		return
 	}
@@ -36,26 +37,28 @@ func main() {
 
 // Opens a connection on the transferAddress and, upon connecting, receives the transmission data.
 func serve(transferAddress string) {
-	for {
-		log.Println("[Server serve]: Opening connection at " + transferAddress)
-		conn, er := connect.OpenConnection(transferAddress)
-		if er != nil {
-			log.Println(logUtil.FormatError("Server serve", er))
-			return
-		}
-		c := *conn
-		defer c.Close()
 
+	log.Println("[Server serve]: Opening connection at " + transferAddress)
+	conn, er := connect.OpenConnection(transferAddress)
+	if er != nil {
+		log.Println(logUtil.FormatError("Server OpenConnection", er))
+		return
+	}
+	c := *conn
+	defer c.Close()
+
+	for {
 		fHeader, er := transit.HeaderInbound(conn)
 		if er != nil {
-			log.Println(logUtil.FormatError("Server serve", er))
-			return
+			log.Println(logUtil.FormatError("Server HeaderInbound", er))
+			continue
 		}
 
+		c.SetReadDeadline(time.Now().Add(5000000000)) // 5 secconds
 		er = transit.FileInbound(fHeader, conn)
 		if er != nil {
-			log.Println(logUtil.FormatError("Server serve", er))
-			return
+			log.Println(logUtil.FormatError("Server FileInbound", er))
 		}
+		c.SetReadDeadline(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)) //unset
 	}
 }

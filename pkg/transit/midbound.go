@@ -2,21 +2,20 @@ package transit
 
 import (
 	"io"
+	"log"
 	"net"
-
-	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 // PassHeader Reroutes a file header from lCon to sCon.
 func PassHeader(lCon *net.Conn, sCon *net.Conn) (*fileHeader, error) {
 	fHead, er := HeaderInbound(lCon)
 	if er != nil {
-		return nil, logUtil.FormatError("Transit PassHeader", er)
+		return nil, er
 	}
 
 	er = HeaderOutbound(fHead, sCon)
 	if er != nil {
-		return fHead, logUtil.FormatError("Transit PassHeader", er)
+		return fHead, er
 	}
 	return fHead, nil
 }
@@ -27,12 +26,20 @@ func PassFile(fHead *fileHeader, lCon *net.Conn, sCon *net.Conn) error {
 	lc := *lCon
 	sc := *sCon
 
-	for i := int64(0); i <= fHead.Blocks; i++ {
-		_, er := io.CopyN(sc, lc, 1024)
+	kb := fHead.Kilobytes
+	tail := fHead.TailSize
+	sendSize := int64(1024)
+
+	for i := int64(0); i <= kb; i++ {
+		if (i == kb) {
+			sendSize = tail
+		}
+		_, er := io.CopyN(sc, lc, sendSize)
+		//log.Println(n)
 		if er != nil {
-			return logUtil.FormatError("Transit PassFile", er)
+			return er
 		}
 	}
-
+	log.Printf("[Pass File]: Successfully passed %s file.", fHead.Filename)
 	return nil
 }

@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"net"
 	"os"
-
-	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 // FileInbound Downloads the connection stream to a file.
@@ -17,44 +16,55 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 
 	fileCreate, er := os.Create(fHead.Filename)
 	if er != nil {
-		return logUtil.FormatError("Transit FileInbound", er)
+		return er
 	}
+	kb := fHead.Kilobytes
+	tail := fHead.TailSize
+	sendSize := int64(1024)
 
-	for i := int64(0); i <= fHead.Blocks; i++ {
-		_, er = io.CopyN(fileCreate, c, 1024)
+	for i := int64(0); i <= kb; i++ {
+		if i == kb {
+			sendSize = tail
+		}
+		_, er := io.CopyN(fileCreate, c, sendSize)
+		//log.Println(n)
 		if er != nil {
-			return logUtil.FormatError("Transit FileInbound", er)
+			return er
 		}
 	}
 
-	er = fileCreate.Truncate(fHead.Blocks*1024 + fHead.TailSize)
+	log.Printf("[Inbound File]: Successfully recieved %s file. Trimming tail...", fHead.Filename)
+	er = fileCreate.Truncate(fHead.Kilobytes*1024 + fHead.TailSize)
 	if er != nil {
-		return logUtil.FormatError("Transit FileInbound", er)
+		return er
 	}
 
 	er = fileCreate.Close()
 	if er != nil {
-		return logUtil.FormatError("Transit FileInbound", er)
+		return er
 	}
+
+	log.Printf("[Inbound File]: Successfully written file %s.", fHead.Filename)
 	return nil
 }
 
 // HeaderInbound Downloads a file header from the connection stream.
 func HeaderInbound(con *net.Conn) (*fileHeader, error) {
 	c := *con
-	tHeader := fileHeader{}
+	fHead := fileHeader{}
 
 	jsonHeader := make([]byte, 1024)
 	_, er := c.Read(jsonHeader)
 	if er != nil {
-		return &tHeader, logUtil.FormatError("Transit HeaderInbound", er)
+		return &fHead, er
 	}
 
 	jsonHeader = bytes.Trim(jsonHeader, "\x00")
-	er = json.Unmarshal(jsonHeader, &tHeader)
+	er = json.Unmarshal(jsonHeader, &fHead)
 	if er != nil {
-		return &tHeader, logUtil.FormatError("Transit HeaderInbound", er)
+		return &fHead, er
 	}
 
-	return &tHeader, nil
+	log.Printf("[Inbound Header]: Retrieved header for %s.", fHead.Filename)
+	return &fHead, nil
 }

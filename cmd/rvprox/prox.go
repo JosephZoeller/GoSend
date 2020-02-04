@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -15,13 +16,8 @@ import (
 
 var inAddrs []string
 var outAddrs []string
-var lastServe = ""
-
-// 1.) Opens the listening addresses (inAddrs)
-// 2.) Each listening address awaits a connection
-// 3.) Upon connecting with a host, the proxy chooses (round-robin) an address from the speaking addresses (outAddrs)
-// 4.) If the speaking address connects to the address, transmit the data. Otherwise, try the next speaking address.
-// 5.) After the data is transmitted, the connection is closed and the listener awaits a new connection.
+var outConns = make([]*net.Conn, 0)
+var lastConn *net.Conn
 
 func init() {
 	inAddrs, outAddrs = connect.ThroughArgs()
@@ -30,13 +26,18 @@ func init() {
 // Opens all proxy listeners, then awaits a signal interrupt to terminate.
 func main() {
 
-	if len(inAddrs) == 0 {
-		log.Println(logUtil.FormatError("Proxy args", errors.New("No inbound addresses declared by user.")))
+	if len(inAddrs) == 1 && inAddrs[0] == "" {
+		log.Fatal(logUtil.FormatError("Proxy args", errors.New("No inbound addresses declared by user.")))
 		return
-	} else if len(outAddrs) == 0 {
-		log.Println(logUtil.FormatError("Proxy args", errors.New("No outbound addresses declared by user.")))
+	} else if len(outAddrs) == 1 && outAddrs[0] == "" {
+		log.Fatal(logUtil.FormatError("Proxy args", errors.New("No outbound addresses declared by user.")))
 		return
 	}
+
+	// How do you make sure that no one can directly access the server?
+	// My solution is to plug the holes and keep them plugged until the end of time.
+	plugAll()
+	lastConn = outConns[len(outConns)-1]; defer closeConnections()
 
 	log.Printf("Registered %d ports", len(inAddrs))
 	for i, v := range inAddrs {
@@ -49,17 +50,50 @@ func main() {
 	<-signalChan
 }
 
+// Gets all connections between the proxy and the server addresses.
+func plugAll() {
+	for _, v := range outAddrs {
+		c, er := plugConnection(v)
+		if er != nil {
+			log.Fatal("Couldn't connect to an out address: " + v)
+		}
+		outConns = append(outConns, c)
+	}
+}
+
+// Creates a connection between the proxy and a server address.
+func plugConnection(address string) (*net.Conn, error) {
+	sCon, er := connect.SeekConnection(address, 5)
+	if er != nil {
+		return nil, logUtil.FormatError("Proxy sendToAddress", er)
+	}
+	log.Println("[Proxy plugConnection]: The reverse proxy has plugged into " + address)
+
+	return sCon, nil
+}
+
+// Closes all connections between the proxy and the server addresses.
+func closeConnections() {
+	for _, v := range outConns {
+		c := *v
+		c.Close()
+	}
+}
+
 // Opens address to listen to and, upon connecting, select a speaking address and reroute the transmission.
 func openListener(address string) {
 
 	for {
 		lCon, er := connect.OpenConnection(address)
 		if er != nil {
-			log.Println(logUtil.FormatError("Proxy openListener", er))
+			log.Println(logUtil.FormatError("Proxy OpenConnection", er))
 			break
 		}
 		for {
-			er = sendToAddress(lCon, pickAddress())
+			er = sendToAddress(lCon, pickSConn())
+			if er == io.EOF {
+				break
+			}
 			if er == nil {
 				break
 			}
@@ -72,49 +106,33 @@ func openListener(address string) {
 
 // Reroutes the transmission being sent from the listening connection to the speaking connection.
 // Attempts to speak to an address for 5 seconds before getting bored.
-func sendToAddress(lCon *net.Conn, sAddr string) error {
-
-	sCon, er := connect.SeekConnection(sAddr, 5)
-	if er != nil {
-		return logUtil.FormatError("Proxy sendToAddress", er)
-	}
-	log.Println("[Proxy sendToAddress]: The reverse proxy has connected to " + sAddr)
-	s := *sCon
-	defer s.Close()
+func sendToAddress(lCon, sCon *net.Conn) error {
 
 	fHead, er := transit.PassHeader(lCon, sCon)
 	if er != nil {
-		return logUtil.FormatError("Proxy sendToAddress", er)
+		return logUtil.FormatError("Proxy PassHeader", er)
 	}
 
 	er = transit.PassFile(fHead, lCon, sCon)
 	if er != nil {
-		return logUtil.FormatError("Proxy sendToAddress", er)
+		log.Printf("[Proxy PassFile]: failed to pass %s (blocksize: %d, tailsize: %d)", fHead.Filename, fHead.Kilobytes, fHead.TailSize)
+		return logUtil.FormatError("Proxy PassFile", er)
 	}
 
 	return nil
 }
 
-// Load balancer. Selects (via round-robin) an address to speak to from the CLI argument.
-func pickAddress() string {
-	addrsCnt := len(outAddrs)
-	if addrsCnt < 0 {
+// Load balancer (if you can call it that). Selects (via round-robin) an address to speak to from the CLI argument.
+func pickSConn() *net.Conn {
+	connCnt := len(outConns)
 
-	}
-
-	if lastServe == "" {
-		lastServe = outAddrs[0]
-		log.Println("Choosing " + lastServe + " to serve")
-		return lastServe
-	}
-
-	for i := 0; i < addrsCnt; i++ {
-		if lastServe == outAddrs[i] {
-			lastServe = outAddrs[(i+1)%addrsCnt]
-			log.Println("Choosing " + lastServe + " to serve")
+	for i := 0; i < connCnt; i++ {
+		if lastConn == outConns[i] {
+			lastConn = outConns[(i+1)%connCnt]
 			break
 		}
 	}
 
-	return lastServe
+	c := *lastConn; log.Println("[Proxy pickSConn]: Connection chosen for transmission:", c.RemoteAddr())
+	return lastConn
 }

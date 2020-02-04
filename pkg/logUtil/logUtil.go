@@ -1,10 +1,10 @@
 package logUtil
 
 import (
-	"errors"
-	"fmt"
+	"log"
 )
 
 func FormatError(source string, er error) error {
-	return errors.New(fmt.Sprintf("[%s]: %s", source, er))
+	log.Printf("[%s]: %s", source, er)
+	return er
 }

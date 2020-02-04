@@ -4,8 +4,6 @@ import (
 	"os"
 	"runtime"
 	"time"
-
-	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 type saveFile struct {
@@ -17,7 +15,7 @@ type fileHeader struct {
 	User      string `json:"User"`
 	Date      string `json:"Date"`
 	AuthToken string `json:"Authentication"`
-	Blocks    int64  `json:"Blocks"`
+	Kilobytes int64  `json:"Blocks"`
 	TailSize  int64  `json:"Tail"`
 }
 
@@ -25,15 +23,15 @@ type fileHeader struct {
 func MakeHeader(file *os.File) (*fileHeader, error) {
 	fstat, er := file.Stat()
 	if er != nil {
-		return &fileHeader{}, logUtil.FormatError("Transit MakeHeader", er)
+		return &fileHeader{}, er
 	}
 
 	return &fileHeader{
-		User:     getDefaultName(),
-		Date:     time.Now().Format("Jan/2/2006"),
-		Blocks:   fstat.Size() / 1024,
-		TailSize: fstat.Size() % 1024,
-		Filename: fstat.Name(),
+		User:      getDefaultName(),
+		Date:      time.Now().Format("Jan/2/2006"),
+		Kilobytes: fstat.Size() / 1024,
+		TailSize:  fstat.Size() % 1024,
+		Filename:  fstat.Name(),
 	}, nil
 }
 
