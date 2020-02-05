@@ -10,8 +10,8 @@ import (
 )
 
 func SendLog(sCon *net.Conn, msg string) {
-	c := *sCon
 	if sCon != nil {
+		c := *sCon
 		transit.LogOutbound(transit.MakeLogMsg(c.RemoteAddr().String(), msg), sCon)
 	} else {
 		log.Println(msg)

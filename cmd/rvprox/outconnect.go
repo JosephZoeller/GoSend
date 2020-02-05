@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
@@ -13,13 +14,14 @@ func plugConnection(address string) (*net.Conn, error) {
 	if er != nil {
 		return nil, er
 	}
-	logUtil.SendLog(logConn, "Proxy plugged into the Server address at "+address)
+	logUtil.SendLog(logConn, fmt.Sprintf("Proxy plugged into the Server at [%s]", address))
 
 	return sCon, nil
 }
 
 // Closes all connections between the proxy and the server addresses.
 func closeConnections() {
+	logUtil.SendLog(logConn, "Proxy is closing connections with the server.")
 	for _, v := range outConns {
 		c := *v
 		c.Close()

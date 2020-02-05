@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -23,21 +24,32 @@ func main() {
 
 func logListen(addrs string) {
 
-	log.Println("[Log Listen]: Opening connection to log at address " + addrs)
+	log.Println("[Log Manager]: Opening connection at address " + addrs)
 	conn, er := connect.OpenConnection(addrs)
 	if er != nil {
-		log.Println("[Log Connection]:", er)
+		log.Println("[Log Manager]: Failed to open connection - " + er.Error())
 		return
 	}
 	c := *conn
 	defer c.Close()
 
+	EoFCnt := 0
 	for {
+		if EoFCnt > 3 { // arbitrary
+			log.Println("[Log Manager]: End of File, closing connection to Log Manager.")
+			break
+		}
+
 		logmsg, er := transit.LogInbound(conn)
-		if er != nil {
-			log.Println("[Log Inbound]:", er)
+		if er == io.EOF {
+			EoFCnt++
+			continue
+		} else if er != nil {
+			log.Println("[Log Manager]: Failed to recieve log message - " + er.Error())
 			continue
 		}
+		EoFCnt = 0
+
 		log.Println(logmsg.String())
 	}
 }
