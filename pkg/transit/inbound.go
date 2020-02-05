@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
+	//"log"
 	"net"
 	"os"
 )
@@ -33,7 +33,7 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 		}
 	}
 
-	log.Printf("[Inbound File]: Successfully recieved %s file. Trimming tail...", fHead.Filename)
+	//log.Printf("[Inbound File]: Successfully recieved %s file. Trimming tail...", fHead.Filename)
 	er = fileCreate.Truncate(fHead.Kilobytes*1024 + fHead.TailSize)
 	if er != nil {
 		return er
@@ -44,7 +44,7 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 		return er
 	}
 
-	log.Printf("[Inbound File]: Successfully written file %s.", fHead.Filename)
+	//log.Printf("[Inbound File]: Successfully written file %s.", fHead.Filename)
 	return nil
 }
 
@@ -65,6 +65,26 @@ func HeaderInbound(con *net.Conn) (*fileHeader, error) {
 		return &fHead, er
 	}
 
-	log.Printf("[Inbound Header]: Retrieved header for %s.", fHead.Filename)
+	//log.Printf("[Inbound Header]: Retrieved header for %s.", fHead.Filename)
 	return &fHead, nil
+}
+
+func LogInbound(con *net.Conn) (*logMsg, error) {
+	c := *con
+	msg := logMsg{}
+
+	jsonHeader := make([]byte, 1024)
+	_, er := c.Read(jsonHeader)
+	if er != nil {
+		return &msg, er
+	}
+
+	jsonHeader = bytes.Trim(jsonHeader, "\x00")
+	er = json.Unmarshal(jsonHeader,&msg)
+	if er != nil {
+		return &msg, er
+	}
+
+	//log.Printf("[Inbound Log]: Retrieved message from %s.", msg.SenderID)
+	return &msg, nil
 }

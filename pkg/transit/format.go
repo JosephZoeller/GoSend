@@ -1,6 +1,7 @@
 package transit
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"time"
@@ -17,6 +18,23 @@ type fileHeader struct {
 	AuthToken string `json:"Authentication"`
 	Kilobytes int64  `json:"Blocks"`
 	TailSize  int64  `json:"Tail"`
+}
+
+type logMsg struct {
+	Sender  string `json:"Sender"`
+	Message string `json:"Message"`
+}
+
+func MakeLogMsg(sndr, msg string) *logMsg { // check size before sending
+	return &logMsg{
+		Sender:  sndr,
+		Message: msg,
+	}
+}
+
+// returns [<sender>]: <message>
+func (m logMsg) String() string{
+	return fmt.Sprintf("[%s]: %s", m.Sender, m.Message)
 }
 
 // creates a header which breifs the transmission reciever on what to expect from the incoming file.

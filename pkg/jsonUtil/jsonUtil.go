@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-
-	"github.com/JosephZoeller/gmg/pkg/logUtil"
 )
 
 // SaveToFile attempts to marshal an interface into a json file.
@@ -13,18 +11,18 @@ import (
 func SaveToFile(fileName string, v interface{}) error {
 	file, er := os.Create(fileName)
 	if er != nil {
-		return logUtil.FormatError("JsonUtil SaveToFile", er)
+		return er
 	}
 	defer file.Close()
 
 	b, er := json.MarshalIndent(v, "", "  ")
 	if er != nil {
-		return logUtil.FormatError("JsonUtil SaveToFile", er)
+		return er
 	}
 
 	_, er = file.Write(b)
 	if er != nil {
-		return logUtil.FormatError("JsonUtil SaveToFile", er)
+		return er
 	}
 	return nil
 }
@@ -34,11 +32,11 @@ func SaveToFile(fileName string, v interface{}) error {
 func LoadFromFile(fileName string, v interface{}) error {
 	b, er := ioutil.ReadFile(fileName)
 	if er != nil {
-		return logUtil.FormatError("JsonUtil LoadFromFile", er)
+		return er
 	}
 	er = json.Unmarshal(b, v)
 	if er != nil {
-		return logUtil.FormatError("JsonUtil LoadFromFile", er)
+		return er
 	}
 	return nil
 }

@@ -4,6 +4,7 @@ test_linux:
 	go build -o ./test/client ./cmd/client
 	go build -o ./test/rvprox ./cmd/rvprox
 	go build -o ./test/server ./cmd/server
+	go build -o ./test/logmgr ./cmd/logmgr
 	cp ./scripts/networktest.sh ./test/t.sh
 
 release_linux:

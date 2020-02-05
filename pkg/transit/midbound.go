@@ -2,7 +2,7 @@ package transit
 
 import (
 	"io"
-	"log"
+	//"log"
 	"net"
 )
 
@@ -40,6 +40,6 @@ func PassFile(fHead *fileHeader, lCon *net.Conn, sCon *net.Conn) error {
 			return er
 		}
 	}
-	log.Printf("[Pass File]: Successfully passed %s file.", fHead.Filename)
+	//log.Printf("[Pass File]: Successfully passed %s file.", fHead.Filename)
 	return nil
 }
