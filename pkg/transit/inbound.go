@@ -33,8 +33,8 @@ func FileInbound(fHead *fileHeader, con *net.Conn) error {
 		}
 	}
 
-	//log.Printf("[Inbound File]: Successfully recieved %s file. Trimming tail...", fHead.Filename)
-	er = fileCreate.Truncate(fHead.Kilobytes*1024 + fHead.TailSize)
+	//log.Printf("[Inbound File]: Successfully received %s file. Trimming tail...", fHead.Filename)
+	er = fileCreate.Truncate(fHead.Kilobytes*1024 + fHead.TailSize) //TODO check if tail even needs trimming. is this deprecated?
 	if er != nil {
 		return er
 	}

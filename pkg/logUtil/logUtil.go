@@ -13,9 +13,11 @@ func SendLog(sCon *net.Conn, msg string) {
 	if sCon != nil {
 		c := *sCon
 		transit.LogOutbound(transit.MakeLogMsg(c.RemoteAddr().String(), msg), sCon)
-	} else {
+	} /* else {
 		log.Println(msg)
 	}
+	*/
+	log.Println(msg)
 }
 
 func ConnectLog(logAddr string) (*net.Conn, error) {

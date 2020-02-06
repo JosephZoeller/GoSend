@@ -5,16 +5,29 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
-//  hook the proxy and servers to the logging manager. Connections are infinite in order to leverage security with project deadlines.
+// hook the proxy and servers to the logging manager. Connections are infinite in order to leverage security with project deadlines.
 func main() {
+	var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
 	for i := 0; i < len(inAddrs); i++ {
-		go logListen(inAddrs[i])
+		if fileSave {
+			str := formatFilename(inAddrs[i])
+			write, er := os.Create(str)
+			if er == nil {
+				logger = log.New(write, "", log.Ldate|log.Ltime)
+				defer write.Close()
+			} else {
+				logger.Printf("[Log Manager]: Failed to create file for %s - %s", str, er.Error())
+			}
+		}
+		go logListen(inAddrs[i], logger)
 	}
 
 	signalChan := make(chan os.Signal, 1)
@@ -22,12 +35,12 @@ func main() {
 	<-signalChan
 }
 
-func logListen(addrs string) {
+func logListen(addrs string, logger *log.Logger) {
 
-	log.Println("[Log Manager]: Opening connection at address " + addrs)
+	logger.Println("[Log Manager]: Opening connection at address " + addrs)
 	conn, er := connect.OpenConnection(addrs)
 	if er != nil {
-		log.Println("[Log Manager]: Failed to open connection - " + er.Error())
+		logger.Println("[Log Manager]: Failed to open connection - " + er.Error())
 		return
 	}
 	c := *conn
@@ -36,7 +49,7 @@ func logListen(addrs string) {
 	EoFCnt := 0
 	for {
 		if EoFCnt > 3 { // arbitrary
-			log.Println("[Log Manager]: End of File, closing connection to Log Manager.")
+			logger.Println("[Log Manager]: Manager assumed End of Session, closing connection to Log Manager.")
 			break
 		}
 
@@ -45,11 +58,22 @@ func logListen(addrs string) {
 			EoFCnt++
 			continue
 		} else if er != nil {
-			log.Println("[Log Manager]: Failed to recieve log message - " + er.Error())
+			logger.Println("[Log Manager]: Failed to receive log message - " + er.Error())
 			continue
 		}
 		EoFCnt = 0
 
-		log.Println(logmsg.String())
+		logger.Println(logmsg.String())
 	}
+}
+
+func displayPlusSave(logger *log.Logger, msg string) {
+	logger.Println(msg)
+	if logger.Writer() != os.Stdin {
+		log.Println(msg)
+	}
+}
+
+func formatFilename(address string) string {
+	return strings.ReplaceAll(address, ":", "_") + ".log"
 }

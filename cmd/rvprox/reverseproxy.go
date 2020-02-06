@@ -25,6 +25,7 @@ func main() {
 		logUtil.SendLog(logConn, fmt.Sprintf("Proxy connected with the Log Manager at [%s]", logAddr))
 	}
 
+	logUtil.SendLog(logConn, fmt.Sprintf("Proxy is attempting to connect with all server addresses..."))
 	connectServers()
 	defer closeConnections()
 	logUtil.SendLog(logConn, fmt.Sprintf("Proxy registered all %d server addresses", len(outAddrs)))
@@ -67,10 +68,10 @@ func openListener(address string) {
 		fName, er := sendToAddress(lCon, pickSConn())
 		for { // loops for each attempt at passing a file
 			if EoFCnt > 3 {
-				logUtil.SendLog(logConn, fmt.Sprintf("End of session assumed. Readying a new session at [%s]", c.RemoteAddr().String()))
+				logUtil.SendLog(logConn, fmt.Sprintf("Proxy assumed End of Session. Readying a new session at [%s]", c.RemoteAddr().String()))
 				break
 			} else if er == nil {
-				logUtil.SendLog(logConn, fmt.Sprintf("File %s passing successful. Proxy will await the next transmission...", fName))
+				logUtil.SendLog(logConn, fmt.Sprintf("Success - Proxy passed file %s. Proxy will await the next transmission...", fName))
 				break
 			} else if er == io.EOF {
 				EoFCnt++

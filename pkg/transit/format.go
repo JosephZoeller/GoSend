@@ -16,7 +16,7 @@ type fileHeader struct {
 	User      string `json:"User"`
 	Date      string `json:"Date"`
 	AuthToken string `json:"Authentication"`
-	Kilobytes int64  `json:"Blocks"`
+	Kilobytes int64  `json:"KB"`
 	TailSize  int64  `json:"Tail"`
 }
 
@@ -37,7 +37,7 @@ func (m logMsg) String() string{
 	return fmt.Sprintf("[%s]: %s", m.Sender, m.Message)
 }
 
-// creates a header which breifs the transmission reciever on what to expect from the incoming file.
+// creates a header which breifs the transmission receiver on what to expect from the incoming file.
 func MakeHeader(file *os.File) (*fileHeader, error) {
 	fstat, er := file.Stat()
 	if er != nil {

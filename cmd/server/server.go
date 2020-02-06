@@ -56,7 +56,7 @@ func serverListen(transferAddress string) {
 			EoFCnt++
 			continue
 		} else if er != nil {
-			logUtil.SendLog(logConn, "Failed to recieve file header - "+er.Error())
+			logUtil.SendLog(logConn, "Failed to receive file header - "+er.Error())
 			continue
 		}
 		EoFCnt = 0
@@ -67,7 +67,7 @@ func serverListen(transferAddress string) {
 		if er != nil {
 			logUtil.SendLog(logConn, "Failed to receive file - "+er.Error())
 		} else {
-			logUtil.SendLog(logConn, fmt.Sprintf("File %s transfer successful. Server is awaiting next transmission...", fHeader.Filename))
+			logUtil.SendLog(logConn, fmt.Sprintf("Success - Server received file %s. Server is awaiting next transmission...", fHeader.Filename))
 		}
 		c.SetReadDeadline(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)) //unset
 	}
