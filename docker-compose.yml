@@ -1,0 +1,44 @@
+version: '3.7'
+
+services:
+
+  client:
+    image: client
+    volumes: 
+      - /home/joseph/Documents/gmg/Client/:/Client
+    build:
+      context: ./cmd/client/
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on: 
+        - reverseproxy
+
+  logmanager:
+    image: logmanager
+    volumes: 
+      - /home/joseph/Documents/gmg/Log_Manager/:/Log_Manager
+    build:
+      context: ./cmd/logmgr/
+      dockerfile: Dockerfile
+    env_file: .env
+
+  reverseproxy:
+    image: reverseproxy
+    build:
+      context: ./cmd/rvprox/
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on: 
+      - server
+      - logmanager
+
+  server:
+    image: server
+    volumes: 
+      - /home/joseph/Documents/gmg/Server/:/Server
+    build: 
+      context: ./cmd/server/
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on: 
+      - logmanager
