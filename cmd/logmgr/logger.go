@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -24,7 +25,7 @@ func main() {
 				logger = log.New(write, "", log.Ldate|log.Ltime)
 				defer write.Close()
 			} else {
-				logger.Printf("[Log Manager]: Failed to create file for %s - %s", str, er.Error())
+				forkOutput(logger, fmt.Sprintf("[Log Manager]: Failed to create file for %s - %s", str, er.Error()))
 			}
 		}
 		go logListen(inAddrs[i], logger)
@@ -37,10 +38,10 @@ func main() {
 
 func logListen(addrs string, logger *log.Logger) {
 
-	logger.Println("[Log Manager]: Opening connection at address " + addrs)
+	forkOutput(logger, "[Log Manager]: Opening connection at address " + addrs)
 	conn, er := connect.OpenConnection(addrs)
 	if er != nil {
-		logger.Println("[Log Manager]: Failed to open connection - " + er.Error())
+		forkOutput(logger, "[Log Manager]: Failed to open connection - " + er.Error())
 		return
 	}
 	c := *conn
@@ -49,7 +50,7 @@ func logListen(addrs string, logger *log.Logger) {
 	EoFCnt := 0
 	for {
 		if EoFCnt > 3 { // arbitrary
-			logger.Println("[Log Manager]: Manager assumed End of Session, closing connection to Log Manager.")
+			forkOutput(logger, "[Log Manager]: Manager assumed End of Session, closing connection to Log Manager.")
 			break
 		}
 
@@ -58,18 +59,18 @@ func logListen(addrs string, logger *log.Logger) {
 			EoFCnt++
 			continue
 		} else if er != nil {
-			logger.Println("[Log Manager]: Failed to receive log message - " + er.Error())
+			forkOutput(logger, "[Log Manager]: Failed to receive log message - " + er.Error())
 			continue
 		}
 		EoFCnt = 0
 
-		logger.Println(logmsg.String())
+		forkOutput(logger, logmsg.String())
 	}
 }
 
-func displayPlusSave(logger *log.Logger, msg string) {
+func forkOutput(logger *log.Logger, msg string) {
 	logger.Println(msg)
-	if logger.Writer() != os.Stdin {
+	if logger.Writer() != os.Stdout {
 		log.Println(msg)
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -10,7 +11,18 @@ var outAddr string
 var filenames []string
 
 func init() {
-	out := flag.String("out", "", "Specify an address to send to.")
+	var envmsg string
+
+	// out port for the client
+	envOutPort := os.Getenv("ClientOutPort")
+	if envOutPort != "" {
+		envmsg = "Default ClientOutPort = " + envOutPort
+	} else {
+		envmsg = "There is no default port specified in the ClientOutPort environment variable."
+	}
+	out := flag.String("out", "", "Specify an address to send to. "+envmsg)
+
+	// files to send
 	files := flag.String("files", "", "Outbound files to send. To send multiple files, delimit each filepath with ' '.")
 	flag.Parse()
 
@@ -18,10 +30,12 @@ func init() {
 	outAddr = *out
 
 	if outAddr == "" {
-		log.Println("[Client Args]: No addresses declared by the user.")
-		return
-	} else if len(filenames) == 1 && filenames[0] == "" {
-		log.Println("[Client Args]: No filenames declared by user.")
-		return
+		if envOutPort == "" {
+			log.Fatal("[Client Args]: No addresses declared by the user.")
+		}
+		outAddr = envOutPort
+	}
+	if len(filenames) == 1 && filenames[0] == "" { // splitting "" will result in a slice with 1 ""
+		log.Fatal("[Client Args]: No filenames declared by user.")
 	}
 }
