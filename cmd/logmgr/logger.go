@@ -16,6 +16,11 @@ import (
 // hook the proxy and servers to the logging manager. Connections are infinite in order to leverage security with project deadlines.
 func main() {
 	var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	if fileSave {
+		if !os.IsExist(os.Mkdir("./logs/", 0775)) {
+			logger.Println("[Log Manager]: Created logs directory.")
+		}
+	}
 
 	for i := 0; i < len(inAddrs); i++ {
 		if fileSave {
@@ -76,5 +81,5 @@ func forkOutput(logger *log.Logger, msg string) {
 }
 
 func formatFilename(address string) string {
-	return strings.ReplaceAll(address, ":", "_") + ".log"
+	return "./logs/" + strings.ReplaceAll(address, ":", "_") + ".log"
 }

@@ -44,6 +44,8 @@ func init() {
 		envmsg = "There are no default outbound ports specified in the ProxyOutPorts environment variable."
 	}
 	out := flag.String("out", "", "Sending address list. To specify multiple addresses, delimit each port with ' '. "+envmsg)
+
+	
 	flag.Parse()
 
 	inAddrs = strings.Split(*in, " ")
