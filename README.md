@@ -1,30 +1,24 @@
 # GMG - Guard My Go
-This array of programs is a security suite aimed towards monitoring and protecting HTTP server apps.
-
-## Getting started
-
+This project is a file transfer application, managed by a Reverse Proxy. Additional features include a round-robin load balancer and a logging manager. The project is containerizable for Docker, containing the requisite Dockerfiles and a docker-compose.yml. Miscellaneous testing, deployment and demonstration scripts are included as well.
 
 ### Installation
-Install this go package with `go get -u github.com/JosephZoeller/gmg`.
-
-## Command-line args / config.json
+Install this go package with `go get -u github.com/JosephZoeller/gmg`. With docker-compose installed, run the `demo.sh` to launch the default services described in the `docker-compose.yml`. The client application is not containerized in this demo, and should be launched through a separate terminal window.
 
 ## Functions
-- [ ] Reverse Proxy
+- [x] Reverse Proxy
 - [ ] Firewall
 - [ ] Intrusion Detection System
-- [ ] Logging Manager
-- [ ] Load Balancer
+- [x] Logging Manager
+- [x] Load Balancer
 
 ## Requirements
-- [ ] Documentation
-- [ ] Agile Project Management
+- [x] Documentation
 - [ ] Unit Testing
-- [ ] Logs & Metrics
-- [ ] Environment Configuration
+- [x] Logs & Metrics
+- [x] Environment Configuration
 - [ ] Security
-- [ ] Build & Deploy Scripts
-- [ ] Containerization
+- [x] Build & Deploy Scripts
+- [x] Containerization
 
 ## Presentation
 - [ ] 10-minute Demonstration
@@ -32,4 +26,4 @@ Install this go package with `go get -u github.com/JosephZoeller/gmg`.
 
 ## Found a bug?
 
-Please submit a bug report to GitHub with as much detail as possible. Please include the log.txt if applicable.
+Please submit a bug report to GitHub with as much detail as possible. Please include the log files if applicable.
