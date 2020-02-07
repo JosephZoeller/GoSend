@@ -9,7 +9,6 @@ RUN go get -d
 RUN go build -o FileServer .
 
 FROM alpine:latest
-
 COPY --from=builder /fileserver .
 
-CMD [ "./FileServer" ]
+ENTRYPOINT [ "./FileServer" ]

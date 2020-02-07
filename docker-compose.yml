@@ -1,18 +1,6 @@
 version: '3.7'
 
 services:
-
-  client:
-    image: client
-    volumes: 
-      - /home/joseph/Documents/gmg/Client/:/Client
-    build:
-      context: ./cmd/client/
-      dockerfile: Dockerfile
-    env_file: .env
-    depends_on: 
-        - reverseproxy
-
   logmanager:
     image: logmanager
     volumes: 
@@ -20,14 +8,27 @@ services:
     build:
       context: ./cmd/logmgr/
       dockerfile: Dockerfile
-    env_file: .env
+    ports: 
+      - "8083"
+      - "8084"    
+    environment:
+      - fileSave=true
+      - LogInPorts=:8083 :8084
+    #env_file: .env
+
 
   reverseproxy:
     image: reverseproxy
     build:
       context: ./cmd/rvprox/
       dockerfile: Dockerfile
-    env_file: .env
+    ports: 
+      - "8080:8080"
+    environment:
+      - ProxyInPorts=reverseproxy:8080
+      - ProxyOutPorts=server:8081 server:8082
+      - ProxyLogPort=logmanager:8083
+    #env_file: .env
     depends_on: 
       - server
       - logmanager
@@ -39,6 +40,12 @@ services:
     build: 
       context: ./cmd/server/
       dockerfile: Dockerfile
-    env_file: .env
+    ports:
+      - "8081"
+      - "8082"
+    environment:
+      - ServerInPorts=:8081 :8082
+      - ServerLogPort=logmanager:8084
+    #env_file: .env
     depends_on: 
       - logmanager

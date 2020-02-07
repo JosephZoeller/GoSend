@@ -11,5 +11,4 @@ RUN go build -o LogManager .
 FROM alpine:latest
 
 COPY --from=builder /logmanager .
-
-CMD [ "./LogManager" ]
+ENTRYPOINT [ "./LogManager" ]

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -20,7 +21,7 @@ func init() {
 	} else {
 		envmsg = "There is no default port specified in the ClientOutPort environment variable."
 	}
-	out := flag.String("out", "", "Specify an address to send to. "+envmsg)
+	out := flag.String("out", "./test.txt", "Specify an address to send to. "+envmsg)
 
 	// files to send
 	files := flag.String("files", "", "Outbound files to send. To send multiple files, delimit each filepath with ' '.")
@@ -40,4 +41,8 @@ func init() {
 	if len(filenames) == 1 && filenames[0] == "" { // splitting "" will result in a slice with 1 ""
 		log.Fatal("[Client Args]: No filenames declared by user.")
 	}
+}
+
+func getDirFiles() { // potentially default transfer files to whatever's in the current directory?
+	ioutil.ReadDir(".")
 }

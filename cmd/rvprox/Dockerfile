@@ -11,5 +11,5 @@ RUN go build -o ReverseProxy .
 FROM alpine:latest
 
 COPY --from=builder /reverseproxy .
-
-CMD [ "./ReverseProxy" ]
+EXPOSE 8080
+ENTRYPOINT [ "./ReverseProxy" ]
