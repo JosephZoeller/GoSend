@@ -1,8 +1,8 @@
 FROM golang:alpine AS builder
 
-RUN mkdir /reverseproxy 
-ADD . /reverseproxy
-WORKDIR /reverseproxy
+RUN mkdir /rvprox 
+ADD . /rvprox
+WORKDIR /rvprox
 
 RUN apk add --no-cache git
 RUN go get -d
@@ -10,6 +10,6 @@ RUN go build -o ReverseProxy .
 
 FROM alpine:latest
 
-COPY --from=builder /reverseproxy .
+COPY --from=builder /rvprox .
 EXPOSE 8080
-ENTRYPOINT [ "./ReverseProxy" ]
+CMD [ "./ReverseProxy" ]

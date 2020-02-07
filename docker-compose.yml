@@ -2,9 +2,10 @@ version: '3.7'
 
 services:
   logmanager:
-    image: logmanager
+    container_name: "logmgr"
+    image: logmgr
     volumes: 
-      - /home/joseph/Documents/gmg/Log_Manager/:/Log_Manager
+      - /home/joseph/Documents/gmg/Log_Manager:/Log_Manager
     build:
       context: ./cmd/logmgr/
       dockerfile: Dockerfile
@@ -13,30 +14,32 @@ services:
       - "8084"    
     environment:
       - fileSave=true
-      - LogInPorts=:8083 :8084
+      - LogInPorts=:8083 :8084 :8085
     #env_file: .env
 
-
   reverseproxy:
-    image: reverseproxy
+    container_name: "rvprox"
+    image: rvprox
     build:
       context: ./cmd/rvprox/
       dockerfile: Dockerfile
     ports: 
       - "8080:8080"
     environment:
-      - ProxyInPorts=reverseproxy:8080
-      - ProxyOutPorts=server:8081 server:8082
+      - ProxyInPorts=rvprox:8080
+      - ProxyOutPorts=server_1:8081 server_1:8082 server_2:8086 server_2:8087
       - ProxyLogPort=logmanager:8083
     #env_file: .env
     depends_on: 
-      - server
+      - server_1
+      - server_2
       - logmanager
 
-  server:
-    image: server
+  server_1:
+    container_name: "srvr_1"
+    image: srvr
     volumes: 
-      - /home/joseph/Documents/gmg/Server/:/Server
+      - /home/joseph/Documents/gmg/Server_1:/Server_1
     build: 
       context: ./cmd/server/
       dockerfile: Dockerfile
@@ -46,6 +49,24 @@ services:
     environment:
       - ServerInPorts=:8081 :8082
       - ServerLogPort=logmanager:8084
+    #env_file: .env
+    depends_on: 
+      - logmanager
+
+  server_2:
+    container_name: "srvr_2"
+    image: srvr
+    volumes: 
+      - /home/joseph/Documents/gmg/Server_2:/Server_2
+    build: 
+      context: ./cmd/server/
+      dockerfile: Dockerfile
+    ports:
+      - "8086"
+      - "8087"
+    environment:
+      - ServerInPorts=:8086 :8087
+      - ServerLogPort=logmanager:8085
     #env_file: .env
     depends_on: 
       - logmanager
