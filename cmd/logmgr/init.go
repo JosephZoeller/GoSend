@@ -8,7 +8,7 @@ import (
 )
 
 var inAddrs []string
-var fileSave bool
+var fileSave bool = true
 
 func init() {
 	var envmsg string
@@ -23,12 +23,12 @@ func init() {
 	in := flag.String("in", "", "Receiving address list. To specify multiple addresses, delimit each port with ' '. "+envmsg)
 
 	// save to log files flag
-	save := flag.Bool("save", false, "Saves individual logs for each connection.")
+	//save := flag.Bool("save", false, "Saves individual logs for each connection.") //Not much of a reason to make this a flag.
 
 	
 	flag.Parse()
 
-	fileSave = *save
+	//fileSave = *save
 	inAddrs = strings.Split(*in, " ")
 
 	if len(inAddrs) == 1 && inAddrs[0] == "" { // splitting "" will result in a slice with 1 ""

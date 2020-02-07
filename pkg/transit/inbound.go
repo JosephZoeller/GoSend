@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	//"path/filepath"
+
 	//"log"
 	"net"
 	"os"
@@ -80,7 +82,7 @@ func LogInbound(con *net.Conn) (*logMsg, error) {
 	}
 
 	jsonHeader = bytes.Trim(jsonHeader, "\x00")
-	er = json.Unmarshal(jsonHeader,&msg)
+	er = json.Unmarshal(jsonHeader, &msg)
 	if er != nil {
 		return &msg, er
 	}

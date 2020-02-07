@@ -17,6 +17,11 @@ import (
 // Opens listening connections, then awaits a signal interruption to terminate.
 func main() {
 	var er error
+	er = os.Mkdir("./downloads/", 0777)
+	if er != nil && !os.IsExist(er) {
+		log.Fatal("[Log Manager]: Failed to create downloads directory.")
+	}
+
 	log.Println("Server is checking for a connection with the Log Manager...")
 	logConn, er = logUtil.ConnectLog(logAddr)
 	if er != nil {
@@ -62,12 +67,15 @@ func serverListen(transferAddress string) {
 		EoFCnt = 0
 
 		c.SetReadDeadline(time.Now().Add(5000000000)) // 5 secconds
-		
+
+		oldname := fHeader.Filename
+		fHeader.Filename = "./downloads/" + fHeader.Filename
+
 		er = transit.FileInbound(fHeader, conn)
 		if er != nil {
 			logUtil.SendLog(logConn, "Failed to receive file - "+er.Error())
 		} else {
-			logUtil.SendLog(logConn, fmt.Sprintf("Success - Server received file %s. Server is awaiting next transmission...", fHeader.Filename))
+			logUtil.SendLog(logConn, fmt.Sprintf("Success - Server received file %s. Server is awaiting next transmission...", oldname))
 		}
 		c.SetReadDeadline(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)) //unset
 	}

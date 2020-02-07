@@ -15,10 +15,12 @@ import (
 
 // hook the proxy and servers to the logging manager. Connections are infinite in order to leverage security with project deadlines.
 func main() {
+	var er error
 	var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	if fileSave {
-		if !os.IsExist(os.Mkdir("./logs/", 0775)) {
-			logger.Println("[Log Manager]: Created logs directory.")
+		er = os.Mkdir("./logs/", 0777)
+		if er != nil && !os.IsExist(er) {
+			log.Fatal("[Log Manager]: Failed to create logs directory.")
 		}
 	}
 
@@ -43,10 +45,10 @@ func main() {
 
 func logListen(addrs string, logger *log.Logger) {
 
-	forkOutput(logger, "[Log Manager]: Opening connection at address " + addrs)
+	forkOutput(logger, "[Log Manager]: Opening connection at address "+addrs)
 	conn, er := connect.OpenConnection(addrs)
 	if er != nil {
-		forkOutput(logger, "[Log Manager]: Failed to open connection - " + er.Error())
+		forkOutput(logger, "[Log Manager]: Failed to open connection - "+er.Error())
 		return
 	}
 	c := *conn
@@ -64,7 +66,7 @@ func logListen(addrs string, logger *log.Logger) {
 			EoFCnt++
 			continue
 		} else if er != nil {
-			forkOutput(logger, "[Log Manager]: Failed to receive log message - " + er.Error())
+			forkOutput(logger, "[Log Manager]: Failed to receive log message - "+er.Error())
 			continue
 		}
 		EoFCnt = 0

@@ -5,7 +5,7 @@ services:
     container_name: "logmgr"
     image: logmgr
     volumes: 
-      - /home/joseph/Documents/gmg/Log_Manager:/Log_Manager
+      - /home/joseph/Documents/gmg/logs:/logs
     build:
       context: ./cmd/logmgr/
       dockerfile: Dockerfile
@@ -13,7 +13,6 @@ services:
       - "8083"
       - "8084"    
     environment:
-      - fileSave=true
       - LogInPorts=:8083 :8084 :8085
     #env_file: .env
 
@@ -39,7 +38,7 @@ services:
     container_name: "srvr_1"
     image: srvr
     volumes: 
-      - /home/joseph/Documents/gmg/Server_1:/Server_1
+      - /home/joseph/Documents/gmg/Server_1:/downloads
     build: 
       context: ./cmd/server/
       dockerfile: Dockerfile
@@ -57,7 +56,7 @@ services:
     container_name: "srvr_2"
     image: srvr
     volumes: 
-      - /home/joseph/Documents/gmg/Server_2:/Server_2
+      - /home/joseph/Documents/gmg/Server_2:/downloads
     build: 
       context: ./cmd/server/
       dockerfile: Dockerfile
