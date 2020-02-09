@@ -1,35 +1,9 @@
-# GMG - Guard My Go
-This array of programs is a security suite aimed towards monitoring and protecting HTTP server apps.
-
-## Getting started
-
+# GoSend - Client-to-Host TCP File Transfer
+This project is a suite of applications for Client-to-Host TCP File Transfer, featuring a reverse proxy with round-robin load balancing and a logging manager. The project includes Docker containerization, with the requisite Dockerfiles and a docker-compose demonstration environment. Miscellaneous testing, deployment and demonstration scripts are available as well.
 
 ### Installation
-Install this go package with `go get -u github.com/JosephZoeller/gmg`.
-
-## Command-line args / config.json
-
-## Functions
-- [ ] Reverse Proxy
-- [ ] Firewall
-- [ ] Intrusion Detection System
-- [ ] Logging Manager
-- [ ] Load Balancer
-
-## Requirements
-- [ ] Documentation
-- [ ] Agile Project Management
-- [ ] Unit Testing
-- [ ] Logs & Metrics
-- [ ] Environment Configuration
-- [ ] Security
-- [ ] Build & Deploy Scripts
-- [ ] Containerization
-
-## Presentation
-- [ ] 10-minute Demonstration
-- [ ] Presentation Slides
+Install this go package with `go get -u github.com/JosephZoeller/gmg`. With docker-compose installed, run the `demo.sh` to launch the default services described in the `docker-compose.yml`. The client application is not containerized in this demo, and should be launched through a separate terminal window.
 
 ## Found a bug?
 
-Please submit a bug report to GitHub with as much detail as possible. Please include the log.txt if applicable.
+Please submit a bug report to GitHub with as much detail as possible. Please include the log files if applicable.
