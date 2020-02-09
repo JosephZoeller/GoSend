@@ -16,7 +16,8 @@ import (
 // hook the proxy and servers to the logging manager. Connections are infinite in order to leverage security with project deadlines.
 func main() {
 	var er error
-	var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	
+	// check for save
 	if fileSave {
 		er = os.Mkdir("./logs/", 0777)
 		if er != nil && !os.IsExist(er) {
@@ -24,15 +25,18 @@ func main() {
 		}
 	}
 
+	// create individual log files for each inbound connection
+	var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	for i := 0; i < len(inAddrs); i++ {
 		if fileSave {
+
 			str := formatFilename(inAddrs[i])
 			write, er := os.Create(str)
 			if er == nil {
-				logger = log.New(write, "", log.Ldate|log.Ltime)
 				defer write.Close()
+				logger = log.New(io.MultiWriter(write, os.Stdout), "", log.Ldate|log.Ltime)
 			} else {
-				forkOutput(logger, fmt.Sprintf("[Log Manager]: Failed to create file for %s - %s", str, er.Error()))
+				logger.Println(fmt.Sprintf("[Log Manager]: Failed to create file for %s - %s", str, er.Error()))
 			}
 		}
 		go logListen(inAddrs[i], logger)
@@ -45,10 +49,10 @@ func main() {
 
 func logListen(addrs string, logger *log.Logger) {
 
-	forkOutput(logger, "[Log Manager]: Opening connection at address "+addrs)
+	logger.Println("[Log Manager]: Opening connection at address "+addrs)
 	conn, er := connect.OpenConnection(addrs)
 	if er != nil {
-		forkOutput(logger, "[Log Manager]: Failed to open connection - "+er.Error())
+		logger.Println("[Log Manager]: Failed to open connection - "+er.Error())
 		return
 	}
 	c := *conn
@@ -57,7 +61,7 @@ func logListen(addrs string, logger *log.Logger) {
 	EoFCnt := 0
 	for {
 		if EoFCnt > 3 { // arbitrary
-			forkOutput(logger, "[Log Manager]: Manager assumed End of Session, closing connection to Log Manager.")
+			logger.Println("[Log Manager]: Manager assumed End of Session, closing connection to Log Manager.")
 			break
 		}
 
@@ -66,19 +70,12 @@ func logListen(addrs string, logger *log.Logger) {
 			EoFCnt++
 			continue
 		} else if er != nil {
-			forkOutput(logger, "[Log Manager]: Failed to receive log message - "+er.Error())
+			logger.Println("[Log Manager]: Failed to receive log message - "+er.Error())
 			continue
 		}
 		EoFCnt = 0
 
-		forkOutput(logger, logmsg.String())
-	}
-}
-
-func forkOutput(logger *log.Logger, msg string) {
-	logger.Println(msg)
-	if logger.Writer() != os.Stdout {
-		log.Println(msg)
+		logger.Println(logmsg.String())
 	}
 }
 

@@ -47,8 +47,7 @@ func serverListen(transferAddress string) {
 		logUtil.SendLog(logConn, "Connection failed - "+er.Error())
 		return
 	}
-	c := *conn
-	defer c.Close()
+	c := *conn; defer c.Close()
 	logUtil.SendLog(logConn, fmt.Sprintf("Server connection established at [%s]", transferAddress))
 
 	EoFCnt := 0
@@ -77,6 +76,7 @@ func serverListen(transferAddress string) {
 		} else {
 			logUtil.SendLog(logConn, fmt.Sprintf("Success - Server received file %s. Server is awaiting next transmission...", oldname))
 		}
+
 		c.SetReadDeadline(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)) //unset
 	}
 }
