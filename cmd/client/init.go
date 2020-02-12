@@ -26,7 +26,6 @@ func init() {
 	// files to send
 	files := flag.String("files", "", "Outbound files to send. To send multiple files, delimit each filepath with ' '.")
 
-	
 	flag.Parse()
 
 	filenames = strings.Split(*files, " ")

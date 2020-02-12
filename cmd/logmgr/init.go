@@ -25,7 +25,6 @@ func init() {
 	// save to log files flag
 	//save := flag.Bool("save", false, "Saves individual logs for each connection.") //Not much of a reason to make this a flag.
 
-	
 	flag.Parse()
 
 	//fileSave = *save

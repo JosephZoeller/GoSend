@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/JosephZoeller/gmg/pkg/connect"
-	"github.com/JosephZoeller/gmg/pkg/logUtil"
+	"github.com/JosephZoeller/gmg/pkg/logutil"
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
@@ -15,14 +15,14 @@ func plugConnection(address string) (*net.Conn, error) {
 	if er != nil {
 		return nil, er
 	}
-	logUtil.SendLog(logConn, fmt.Sprintf("Proxy plugged into the Server at [%s]", address))
+	logutil.SendLog(logConn, fmt.Sprintf("Proxy plugged into the Server at [%s]", address))
 
 	return sCon, nil
 }
 
 // Closes all connections between the proxy and the server addresses.
 func closeConnections() {
-	logUtil.SendLog(logConn, "Proxy is closing connections with the server.")
+	logutil.SendLog(logConn, "Proxy is closing connections with the server.")
 	for _, v := range outConns {
 		c := *v
 		c.Close()
@@ -58,6 +58,6 @@ func pickSConn() *net.Conn {
 	}
 
 	c := *lastConn
-	logUtil.SendLog(logConn, fmt.Sprintf("Proxy selected Server [%s] for data transmission.", c.RemoteAddr().String()))
+	logutil.SendLog(logConn, fmt.Sprintf("Proxy selected Server [%s] for data transmission.", c.RemoteAddr().String()))
 	return lastConn
 }

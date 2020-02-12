@@ -16,6 +16,7 @@ type logMsg struct {
 	Message string `json:"Message"`
 }
 
+// MakeLogMsg creates a log message.
 func MakeLogMsg(sndr, msg string) *logMsg { // check size before sending
 	return &logMsg{
 		Sender:  sndr,
@@ -23,12 +24,12 @@ func MakeLogMsg(sndr, msg string) *logMsg { // check size before sending
 	}
 }
 
-// returns [<sender>]: <message>
+// String returns [<sender>]: <message>
 func (m logMsg) String() string {
 	return fmt.Sprintf("[%s]: %s", m.Sender, m.Message)
 }
 
-// creates a header which breifs the transmission receiver on what to expect from the incoming file.
+// MakeHeader creates a header which breifs the transmission receiver on what to expect from the incoming file.
 func MakeHeader(file *os.File) (*fileHeader, error) {
 	fstat, er := file.Stat()
 	if er != nil {

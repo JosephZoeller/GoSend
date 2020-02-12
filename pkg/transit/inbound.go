@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+
 	//"path/filepath"
 
 	//"log"
@@ -71,6 +72,7 @@ func HeaderInbound(con *net.Conn) (*fileHeader, error) {
 	return &fHead, nil
 }
 
+// LogInbound acquires a log message from a connection
 func LogInbound(con *net.Conn) (*logMsg, error) {
 	c := *con
 	msg := logMsg{}

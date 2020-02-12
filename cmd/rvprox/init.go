@@ -45,7 +45,6 @@ func init() {
 	}
 	out := flag.String("out", "", "Sending address list. To specify multiple addresses, delimit each port with ' '. "+envmsg)
 
-	
 	flag.Parse()
 
 	inAddrs = strings.Split(*in, " ")

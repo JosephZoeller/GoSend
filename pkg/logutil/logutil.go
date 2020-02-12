@@ -1,4 +1,4 @@
-package logUtil
+package logutil
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	"github.com/JosephZoeller/gmg/pkg/transit"
 )
 
+// SendLog sends the log message to the log manager
 func SendLog(sCon *net.Conn, msg string) {
 	if sCon != nil {
 		c := *sCon
@@ -20,6 +21,7 @@ func SendLog(sCon *net.Conn, msg string) {
 	log.Println(msg)
 }
 
+// ConnectLog Dials the log manager
 func ConnectLog(logAddr string) (*net.Conn, error) {
 	if logAddr != "" {
 		sCon, er := connect.SeekConnection(logAddr, 5)

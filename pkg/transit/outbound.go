@@ -57,7 +57,7 @@ func HeaderOutbound(fHead *fileHeader, conn *net.Conn) error {
 	return nil
 }
 
-// HeaderOutbound uploads a file header to the connection stream.
+// LogOutbound uploads a log to the connection stream.
 func LogOutbound(msg *logMsg, conn *net.Conn) error {
 	c := *conn
 

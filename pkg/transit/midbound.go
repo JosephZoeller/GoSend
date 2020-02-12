@@ -31,7 +31,7 @@ func PassFile(fHead *fileHeader, lCon *net.Conn, sCon *net.Conn) error {
 	sendSize := int64(1024)
 
 	for i := int64(0); i <= kb; i++ {
-		if (i == kb) {
+		if i == kb {
 			sendSize = tail
 		}
 		//io.MultiWriter() could allow this function to write to multiple sCons at the same time, thus forking the filestream.

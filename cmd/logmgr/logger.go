@@ -16,7 +16,7 @@ import (
 // hook the proxy and servers to the logging manager. Connections are infinite in order to leverage security with project deadlines.
 func main() {
 	var er error
-	
+
 	// check for save
 	if fileSave {
 		er = os.Mkdir("./logs/", 0777)
@@ -49,10 +49,10 @@ func main() {
 
 func logListen(addrs string, logger *log.Logger) {
 
-	logger.Println("[Log Manager]: Opening connection at address "+addrs)
+	logger.Println("[Log Manager]: Opening connection at address " + addrs)
 	conn, er := connect.OpenConnection(addrs)
 	if er != nil {
-		logger.Println("[Log Manager]: Failed to open connection - "+er.Error())
+		logger.Println("[Log Manager]: Failed to open connection - " + er.Error())
 		return
 	}
 	c := *conn
@@ -70,7 +70,7 @@ func logListen(addrs string, logger *log.Logger) {
 			EoFCnt++
 			continue
 		} else if er != nil {
-			logger.Println("[Log Manager]: Failed to receive log message - "+er.Error())
+			logger.Println("[Log Manager]: Failed to receive log message - " + er.Error())
 			continue
 		}
 		EoFCnt = 0
